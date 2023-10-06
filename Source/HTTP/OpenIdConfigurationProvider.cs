@@ -16,8 +16,8 @@ public sealed class OpenIdConfigurationProvider
         if (_configurations.TryGetValue(authority, out OpenIdConnectConfiguration? cachedConfig)) return cachedConfig;
 
         // Fetch new configuration
-        HttpClient httpClient = _httpClientFactory.CreateClient(authority);
-        string response = await httpClient.GetStringAsync("/.well-known/openid-configuration", token);
+        HttpClient httpClient = _httpClientFactory.CreateClient();
+        string response = await httpClient.GetStringAsync($"{authority}/.well-known/openid-configuration", token);
         var config = new OpenIdConnectConfiguration(response);
 
         // Cache the fetched configuration

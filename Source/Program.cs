@@ -1,4 +1,5 @@
 using AspNetCore.API.HTTP;
+using Microsoft.IdentityModel.Tokens;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -31,7 +32,8 @@ var oidcProvider = externalApi.GetValue<string>("OIDC")!;
 IConfigurationSection oidc = builder.Configuration.GetSection("OIDC");
 IConfigurationSection provider = oidc.GetSection(oidcProvider);
 
-var authority = provider.GetValue<string>("Authority")!;
+var tenantId = provider.GetValue<string>("TenantId")!;
+string authority = String.Format(provider.GetValue<string>("Authority")!, tenantId);
 var clientId = provider.GetValue<string>("ClientId")!;
 var clientSecret = provider.GetValue<string>("ClientSecret")!;
 
@@ -40,6 +42,10 @@ builder.Services.AddAuthentication("Default")
     {
         options.Authority = authority;
         options.Audience = clientId;
+        options.TokenValidationParameters = new TokenValidationParameters {
+            ValidateIssuer = false,
+            IssuerValidator = (issuer, token, parameters) => { return token.Issuer; }
+        };
     });
 
 builder.Services.AddOAuth2HttpClient<TestHttp>(options =>

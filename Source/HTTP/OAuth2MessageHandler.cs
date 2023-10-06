@@ -27,7 +27,7 @@ public sealed class OAuth2MessageHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
     {
         // Attach access token to headers
-        string accessToken = await _accessTokenProvider.FetchTokenAsync(_authority, _clientId, _clientSecret, _scope, token);
+        string accessToken = await _accessTokenProvider.FetchTokenAsync(_authority, _clientId, _clientSecret, _scope, false, token);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         // Send the request
@@ -35,8 +35,10 @@ public sealed class OAuth2MessageHandler : DelegatingHandler
 
         if (response.StatusCode is not (HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)) return response;
 
+        Console.WriteLine("Re-invoking");
+
         // Refresh the token
-        accessToken = await _accessTokenProvider.FetchTokenAsync(_authority, _clientId, _clientSecret, _scope, token);
+        accessToken = await _accessTokenProvider.FetchTokenAsync(_authority, _clientId, _clientSecret, _scope, true, token);
 
         // Clone the request and attach the new token
         HttpRequestMessage newRequest = await CloneHttpRequestMessageAsync(request);
@@ -46,9 +48,13 @@ public sealed class OAuth2MessageHandler : DelegatingHandler
         response = await base.SendAsync(newRequest, token);
 
         // Optionally, give up if it still fails
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
             // Handle the error
+        }
+        else if (response.StatusCode is HttpStatusCode.TooManyRequests or HttpStatusCode.InternalServerError or HttpStatusCode.BadGateway)
+        {
+            // Do some retries
         }
 
         return response;

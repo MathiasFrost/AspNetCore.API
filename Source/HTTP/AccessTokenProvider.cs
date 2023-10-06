@@ -5,6 +5,7 @@ namespace AspNetCore.API.HTTP;
 
 public sealed class AccessTokenProvider
 {
+    private static short fetches;
     private readonly ConcurrentDictionary<string, string> _cachedTokens = new();
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly OpenIdConfigurationProvider _openIdConfigurationProvider;
@@ -16,10 +17,10 @@ public sealed class AccessTokenProvider
         _openIdConfigurationProvider = openIdConfigurationProvider;
     }
 
-    public async Task<string> FetchTokenAsync(string authority, string clientId, string clientSecret, string scope, CancellationToken token)
+    public async Task<string> FetchTokenAsync(string authority, string clientId, string clientSecret, string scope, bool forceFetch, CancellationToken token)
     {
         // Try to retrieve a cached token for the given scope.
-        if (_cachedTokens.TryGetValue(scope, out string? cachedToken) && !String.IsNullOrEmpty(cachedToken)) return cachedToken;
+        if (!forceFetch && _cachedTokens.TryGetValue(scope, out string? cachedToken) && !String.IsNullOrEmpty(cachedToken)) return cachedToken;
 
         // Ensure only one request at a time per scope by getting/creating a semaphore for the scope.
         SemaphoreSlim semaphore = _semaphores.GetOrAdd(scope, new SemaphoreSlim(1, 1));
@@ -29,10 +30,10 @@ public sealed class AccessTokenProvider
         try
         {
             // Check again in case another request updated the token while we were waiting for the semaphore.
-            if (_cachedTokens.TryGetValue(scope, out cachedToken) && !String.IsNullOrEmpty(cachedToken)) return cachedToken;
+            if (!forceFetch && _cachedTokens.TryGetValue(scope, out cachedToken) && !String.IsNullOrEmpty(cachedToken)) return cachedToken;
 
             // Create a new HttpClient from the factory
-            HttpClient httpClient = _httpClientFactory.CreateClient(authority);
+            HttpClient httpClient = _httpClientFactory.CreateClient();
 
             // Fetch the token for the given scope (this is a simplified example).
             var data = new KeyValuePair<string, string>[] {
@@ -43,16 +44,19 @@ public sealed class AccessTokenProvider
             };
             OpenIdConnectConfiguration config = await _openIdConfigurationProvider.GetConfigurationAsync(authority, token);
             HttpResponseMessage response = await httpClient.PostAsync(config.TokenEndpoint, new FormUrlEncodedContent(data), token);
+            fetches++;
+            Console.WriteLine($"#########################\n{fetches}\n######################");
 
             if (response.IsSuccessStatusCode)
             {
-                cachedToken = await response.Content.ReadAsStringAsync(token);
+                var tokenResponse = new OpenIdConnectMessage(await response.Content.ReadAsStringAsync(token));
+                cachedToken = tokenResponse.AccessToken;
                 _cachedTokens[scope] = cachedToken;
             }
             else
             {
                 // Handle error
-                throw new Exception("Failed to fetch token");
+                throw new Exception($"Failed to fetch token: {await response.Content.ReadAsStringAsync(token)}");
             }
         }
         finally

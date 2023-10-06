@@ -1,0 +1,21 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCore.API", "Source\AspNetCore.API.csproj", "{8892FAA7-69BE-4B94-81C9-2D0B28CC5178}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFolder", "SolutionFolder", "{54DBFACF-02DD-4EBE-A377-C819C9A7DCB1}"
+	ProjectSection(SolutionItems) = preProject
+		AspNetCore.API.sln.DotSettings = AspNetCore.API.sln.DotSettings
+		.gitignore = .gitignore
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8892FAA7-69BE-4B94-81C9-2D0B28CC5178}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8892FAA7-69BE-4B94-81C9-2D0B28CC5178}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8892FAA7-69BE-4B94-81C9-2D0B28CC5178}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8892FAA7-69BE-4B94-81C9-2D0B28CC5178}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

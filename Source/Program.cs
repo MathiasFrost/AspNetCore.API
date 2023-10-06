@@ -21,20 +21,36 @@ builder.Services.AddCors(static options => options.AddDefaultPolicy(static polic
     policyBuilder.AllowCredentials();
 }));
 
+IConfigurationSection externalApi = builder.Configuration.GetSection("ExternalAPI");
+IConfigurationSection test = externalApi.GetSection("Test");
+var baseAddress = test.GetValue<string>("BaseAddress")!;
+var scope = test.GetValue<string>("Scope")!;
+var timeoutSeconds = externalApi.GetValue<double>("TimeoutSeconds");
+
+var oidcProvider = externalApi.GetValue<string>("OIDC")!;
+IConfigurationSection oidc = builder.Configuration.GetSection("OIDC");
+IConfigurationSection provider = oidc.GetSection(oidcProvider);
+
+var authority = provider.GetValue<string>("Authority")!;
+var clientId = provider.GetValue<string>("ClientId")!;
+var clientSecret = provider.GetValue<string>("ClientSecret")!;
+
 builder.Services.AddAuthentication("Default")
-    .AddJwtBearer("Default", static options =>
+    .AddJwtBearer("Default", options =>
     {
-        options.Authority = "https://login.microsoft.com";
-        options.Audience = "";
+        options.Authority = authority;
+        options.Audience = clientId;
     });
 
-builder.Services.AddTransient<OAuth2MessageHandler>();
-builder.Services.AddHttpClient<TestHttpClient>(static client =>
-    {
-        client.BaseAddress = new Uri("http://localhost:5000/");
-        client.Timeout = TimeSpan.FromSeconds(6);
-    })
-    .AddHttpMessageHandler<OAuth2MessageHandler>();
+builder.Services.AddOAuth2HttpClient<TestHttp>(options =>
+{
+    options.BaseAddress = new Uri(baseAddress);
+    options.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
+    options.Authority = authority;
+    options.ClientId = clientId;
+    options.ClientSecret = clientSecret;
+    options.Scope = scope;
+});
 
 WebApplication app = builder.Build();
 

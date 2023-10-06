@@ -1,16 +1,22 @@
 ﻿using System.Collections.Concurrent;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 namespace AspNetCore.API.HTTP;
 
-public class AccessTokenProvider
+public sealed class AccessTokenProvider
 {
     private readonly ConcurrentDictionary<string, string> _cachedTokens = new();
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly OpenIdConfigurationProvider _openIdConfigurationProvider;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _semaphores = new();
 
-    public AccessTokenProvider(IHttpClientFactory httpClientFactory) => _httpClientFactory = httpClientFactory;
+    public AccessTokenProvider(IHttpClientFactory httpClientFactory, OpenIdConfigurationProvider openIdConfigurationProvider)
+    {
+        _httpClientFactory = httpClientFactory;
+        _openIdConfigurationProvider = openIdConfigurationProvider;
+    }
 
-    public async Task<string> FetchTokenAsync(string scope)
+    public async Task<string> FetchTokenAsync(string authority, string clientId, string clientSecret, string scope, CancellationToken token)
     {
         // Try to retrieve a cached token for the given scope.
         if (_cachedTokens.TryGetValue(scope, out string? cachedToken) && !String.IsNullOrEmpty(cachedToken)) return cachedToken;
@@ -18,7 +24,7 @@ public class AccessTokenProvider
         // Ensure only one request at a time per scope by getting/creating a semaphore for the scope.
         SemaphoreSlim semaphore = _semaphores.GetOrAdd(scope, new SemaphoreSlim(1, 1));
 
-        await semaphore.WaitAsync();
+        await semaphore.WaitAsync(token);
 
         try
         {
@@ -26,14 +32,21 @@ public class AccessTokenProvider
             if (_cachedTokens.TryGetValue(scope, out cachedToken) && !String.IsNullOrEmpty(cachedToken)) return cachedToken;
 
             // Create a new HttpClient from the factory
-            HttpClient httpClient = _httpClientFactory.CreateClient("oidc");
+            HttpClient httpClient = _httpClientFactory.CreateClient(authority);
 
             // Fetch the token for the given scope (this is a simplified example).
-            HttpResponseMessage response = await httpClient.GetAsync($"/token-endpoint?scope={scope}");
+            var data = new KeyValuePair<string, string>[] {
+                new(OpenIdConnectParameterNames.ClientId, clientId),
+                new(OpenIdConnectParameterNames.ClientSecret, clientSecret),
+                new(OpenIdConnectParameterNames.Scope, scope),
+                new(OpenIdConnectParameterNames.GrantType, OpenIdConnectGrantTypes.ClientCredentials)
+            };
+            OpenIdConnectConfiguration config = await _openIdConfigurationProvider.GetConfigurationAsync(authority, token);
+            HttpResponseMessage response = await httpClient.PostAsync(config.TokenEndpoint, new FormUrlEncodedContent(data), token);
 
             if (response.IsSuccessStatusCode)
             {
-                cachedToken = await response.Content.ReadAsStringAsync();
+                cachedToken = await response.Content.ReadAsStringAsync(token);
                 _cachedTokens[scope] = cachedToken;
             }
             else

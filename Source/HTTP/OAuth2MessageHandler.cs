@@ -3,32 +3,47 @@ using System.Net.Http.Headers;
 
 namespace AspNetCore.API.HTTP;
 
-public class OAuth2MessageHandler : DelegatingHandler
+public sealed class OAuth2MessageHandler : DelegatingHandler
 {
-    private string _accessToken = String.Empty;
+    private readonly AccessTokenProvider _accessTokenProvider;
+    private readonly string _authority;
+    private readonly string _clientId;
+    private readonly string _clientSecret;
+    private readonly string _scope;
 
-    public OAuth2MessageHandler(IConfiguration configuration, HttpMessageHandler innerHandler) : base(innerHandler) { }
+    public OAuth2MessageHandler(string authority,
+        string clientId,
+        string scope,
+        string clientSecret,
+        AccessTokenProvider accessTokenProvider)
+    {
+        _authority = authority;
+        _clientId = clientId;
+        _scope = scope;
+        _clientSecret = clientSecret;
+        _accessTokenProvider = accessTokenProvider;
+    }
 
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
-        CancellationToken cancellationToken)
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
     {
         // Attach access token to headers
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
+        string accessToken = await _accessTokenProvider.FetchTokenAsync(_authority, _clientId, _clientSecret, _scope, token);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         // Send the request
-        HttpResponseMessage response = await base.SendAsync(request, cancellationToken);
+        HttpResponseMessage response = await base.SendAsync(request, token);
 
         if (response.StatusCode is not (HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)) return response;
 
         // Refresh the token
-        _accessToken = await RefreshAccessToken();
+        accessToken = await _accessTokenProvider.FetchTokenAsync(_authority, _clientId, _clientSecret, _scope, token);
 
         // Clone the request and attach the new token
         HttpRequestMessage newRequest = await CloneHttpRequestMessageAsync(request);
-        newRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
+        newRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         // Retry the request
-        response = await base.SendAsync(newRequest, cancellationToken);
+        response = await base.SendAsync(newRequest, token);
 
         // Optionally, give up if it still fails
         if (response.StatusCode == HttpStatusCode.Unauthorized)
@@ -39,11 +54,7 @@ public class OAuth2MessageHandler : DelegatingHandler
         return response;
     }
 
-    private async Task<string> RefreshAccessToken() =>
-        // Logic to refresh the token
-        "new_access_token";
-
-    private async Task<HttpRequestMessage> CloneHttpRequestMessageAsync(HttpRequestMessage req)
+    private static async Task<HttpRequestMessage> CloneHttpRequestMessageAsync(HttpRequestMessage req)
     {
         var clone = new HttpRequestMessage(req.Method, req.RequestUri);
 

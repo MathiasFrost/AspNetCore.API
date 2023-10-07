@@ -50,6 +50,7 @@ public sealed class AccessTokenProvider
             if (response.IsSuccessStatusCode)
             {
                 var tokenResponse = new OpenIdConnectMessage(await response.Content.ReadAsStringAsync(token));
+                // Store the whole message or a struct with expires_in and access_token and do a check for expiry at the start of this method
                 cachedToken = tokenResponse.AccessToken;
                 _cachedTokens[scope] = cachedToken;
             }

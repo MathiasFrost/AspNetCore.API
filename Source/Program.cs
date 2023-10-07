@@ -1,4 +1,5 @@
 using AspNetCore.API.HTTP;
+using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -37,14 +38,20 @@ string authority = String.Format(provider.GetValue<string>("Authority")!, tenant
 var clientId = provider.GetValue<string>("ClientId")!;
 var clientSecret = provider.GetValue<string>("ClientSecret")!;
 
-builder.Services.AddAuthentication("Default")
-    .AddJwtBearer("Default", options =>
+builder.Services.AddAuthentication("Dynamic")
+    .AddPolicyScheme("Dynamic", "Dynamic Scheme",
+        static options => options.ForwardDefaultSelector = static context => StringValues.IsNullOrEmpty(context.Request.Headers.Origin) ? "Daemon" : "Browser")
+    .AddJwtBearer("Daemon", options =>
     {
         options.Authority = authority;
         options.Audience = clientId;
+    })
+    .AddJwtBearer("Browser", options =>
+    {
+        options.Authority = "https://login.microsoftonline.com/common/v2.0";
+        options.Audience = clientId;
         options.TokenValidationParameters = new TokenValidationParameters {
-            ValidateIssuer = false,
-            IssuerValidator = (issuer, token, parameters) => { return token.Issuer; }
+            ValidateIssuer = false
         };
     });
 

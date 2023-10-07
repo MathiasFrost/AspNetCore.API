@@ -1,4 +1,5 @@
 using AspNetCore.API.HTTP;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
 
@@ -39,14 +40,30 @@ var clientId = provider.GetValue<string>("ClientId")!;
 var clientSecret = provider.GetValue<string>("ClientSecret")!;
 
 builder.Services.AddAuthentication("Dynamic")
-    .AddPolicyScheme("Dynamic", "Dynamic Scheme",
-        static options => options.ForwardDefaultSelector = static context => StringValues.IsNullOrEmpty(context.Request.Headers.Origin) ? "Daemon" : "Browser")
-    .AddJwtBearer("Daemon", options =>
+    .AddPolicyScheme("Dynamic", "Dynamic Scheme", static options => options.ForwardDefaultSelector = static context =>
+    {
+        if (!context.Request.Cookies.TryGetValue("JWT", out string? encryptedJwt))
+            return StringValues.IsNullOrEmpty(context.Request.Headers.Origin) ? "Daemon" : "Browser";
+
+        try
+        {
+            IDataProtector dp = context.RequestServices.GetRequiredService<IDataProtectionProvider>().CreateProtector("JwtCookie");
+            context.Request.Headers.Remove("Authorization");
+            context.Request.Headers.Authorization = dp.Unprotect(encryptedJwt);
+        }
+        catch (Exception e)
+        {
+            context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("JwtCookie").LogWarning(e, "Invalid encrypted JWT token");
+        }
+
+        return "Daemon"; // only for testing
+    })
+    .AddJwtBearer("Daemon", null, options =>
     {
         options.Authority = authority;
         options.Audience = clientId;
     })
-    .AddJwtBearer("Browser", options =>
+    .AddJwtBearer("Browser", null, options =>
     {
         options.Authority = "https://login.microsoftonline.com/common/v2.0";
         options.Audience = clientId;

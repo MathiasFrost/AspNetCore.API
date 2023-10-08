@@ -1,7 +1,10 @@
+using System.Net.Http.Headers;
 using AspNetCore.API.HTTP;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -42,21 +45,24 @@ var clientSecret = provider.GetValue<string>("ClientSecret")!;
 builder.Services.AddAuthentication("Dynamic")
     .AddPolicyScheme("Dynamic", "Dynamic Scheme", static options => options.ForwardDefaultSelector = static context =>
     {
-        if (!context.Request.Cookies.TryGetValue("JWT", out string? encryptedJwt))
-            return StringValues.IsNullOrEmpty(context.Request.Headers.Origin) ? "Daemon" : "Browser";
-
-        try
+        foreach (KeyValuePair<string, string> pair in context.Request.Cookies)
         {
-            IDataProtector dp = context.RequestServices.GetRequiredService<IDataProtectionProvider>().CreateProtector("JwtCookie");
-            context.Request.Headers.Remove("Authorization");
-            context.Request.Headers.Authorization = dp.Unprotect(encryptedJwt);
-        }
-        catch (Exception e)
-        {
-            context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("JwtCookie").LogWarning(e, "Invalid encrypted JWT token");
+            if (!pair.Key.EndsWith("AspNetCore.API_AccessToken")) continue;
+            try
+            {
+                IDataProtector dp = context.RequestServices.GetRequiredService<IDataProtectionProvider>().CreateProtector("JwtCookie");
+                context.Request.Headers.Remove(HeaderNames.Authorization);
+                var authHeader = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, dp.Unprotect(pair.Value));
+                context.Request.Headers.Authorization = authHeader.ToString();
+                return "Browser"; // only for testing
+            }
+            catch (Exception e)
+            {
+                context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("JwtCookie").LogWarning(e, "Invalid encrypted JWT token");
+            }
         }
 
-        return "Daemon"; // only for testing
+        return StringValues.IsNullOrEmpty(context.Request.Headers.Origin) ? "Daemon" : "Browser";
     })
     .AddJwtBearer("Daemon", null, options =>
     {

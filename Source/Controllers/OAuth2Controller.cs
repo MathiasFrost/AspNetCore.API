@@ -1,5 +1,4 @@
 ﻿using AspNetCore.API.HTTP;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
@@ -24,16 +23,20 @@ public sealed class OAuth2Controller : ControllerBase
     [HttpGet]
     public async Task<IDictionary<string, string>?> Invoke(CancellationToken token) => await _testHttp.GetClaims(token);
 
-    [HttpGet]
-    public void SignIn([FromQuery] string jwtBearer)
+    [HttpGet("{name:required}")]
+    public void SetItem(string name, [FromQuery] string jwtBearer)
     {
-        Response.Cookies.Append("JWT", _dataProtector.Protect($"{JwtBearerDefaults.AuthenticationScheme} {jwtBearer}"), new CookieOptions {
+        Response.Cookies.Delete(name);
+        Response.Cookies.Append(name, _dataProtector.Protect(jwtBearer), new CookieOptions {
             Domain = "localhost",
-            Secure = true,
+            Secure = false,
             SameSite = SameSiteMode.Lax,
             HttpOnly = true,
             MaxAge = TimeSpan.FromHours(1),
             IsEssential = true
         });
     }
+
+    [HttpGet("{name:required}")]
+    public string? GetItem(string name) => Request.Cookies.TryGetValue(name, out string? res) ? _dataProtector.Unprotect(res) : null;
 }

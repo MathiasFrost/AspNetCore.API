@@ -26,6 +26,7 @@ public interface IChatHub
 {
     public Task Pong(string text);
 }
+
 // {"protocol":"json","version":1}
 // {"type":6}
 // {"type":1,"target":"Ping","arguments":["text"]}

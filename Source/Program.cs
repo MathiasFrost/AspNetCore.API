@@ -1,12 +1,17 @@
 using System.Net.Http.Headers;
+using AspNetCore.API.Contracts;
 using AspNetCore.API.HTTP;
 using AspNetCore.API.Services;
 using AspNetCore.API.Hubs;
+using CoreWCF;
+using CoreWCF.Configuration;
+using CoreWCF.Description;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
+using WeatherForecastService = AspNetCore.API.Services.WeatherForecastService;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -90,10 +95,11 @@ builder.Services.AddOAuth2HttpClient<TestHttp>(options =>
     options.Scope = scope;
 });
 
-builder.Services.AddGrpc(static options =>
-{
-    options.EnableDetailedErrors = true;
-});
+builder.Services.AddGrpc(static options => { options.EnableDetailedErrors = true; });
+
+builder.Services.AddServiceModelServices();
+builder.Services.AddServiceModelMetadata();
+builder.Services.AddTransient<AspNetCore.API.Contracts.WeatherForecastService>();
 
 builder.Services.AddSignalR();
 
@@ -111,7 +117,14 @@ app.UseAuthorization();
 
 app.MapHub<ChatHub>("/Chat");
 app.MapControllers();
-
-app.MapGrpcService<GreeterService>();
+app.MapGrpcService<WeatherForecastService>();
+app.UseServiceModel(serviceBuilder =>
+{
+    // Add the Echo Service
+    serviceBuilder.AddService<AspNetCore.API.Contracts.WeatherForecastService>();
+    serviceBuilder.AddServiceEndpoint<AspNetCore.API.Contracts.WeatherForecastService, IWeatherForecastService>(new WSHttpBinding(SecurityMode.None), "/WeatherForecastService.svc");
+    var serviceMetadataBehavior = app.Services.GetRequiredService<ServiceMetadataBehavior>();
+    serviceMetadataBehavior.HttpGetEnabled = true;
+});
 
 app.Run();

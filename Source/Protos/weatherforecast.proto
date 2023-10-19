@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+option csharp_namespace = "AspNetCore.API";
+
+package weatherforecasts;
+
+// The Weather Forecast service definition.
+service WeatherForecasts {
+  // Sends a greeting
+  rpc Get (WeatherForecastsRequest) returns (WeatherForecastsResponse);
+}
+
+// The request message containing the user's name.
+message WeatherForecastsRequest {
+//  string name = 1;
+}
+
+// The response message containing the greetings.
+message WeatherForecastResponse {
+  string date = 1;
+  int32 temperatureC = 2;
+  int32 temperatureF = 3;
+  string summary = 4;
+}
+
+// A collection of Weather Forecasts
+message WeatherForecastsResponse {
+  repeated WeatherForecastResponse forecasts = 1;
+}

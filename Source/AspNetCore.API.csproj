@@ -8,6 +8,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Dapper" Version="2.1.11" />
+		<PackageReference Include="MediatR" Version="12.1.1" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.10" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.5" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
@@ -17,6 +19,9 @@
 		<_ContentIncludedByDefault Remove="Pages\Shared\MainLayout.razor" />
 		<_ContentIncludedByDefault Remove="Pages\Shared\NavMenu.razor" />
 		<_ContentIncludedByDefault Remove="Pages\Shared\SurveyPrompt.razor" />
+		<_ContentIncludedByDefault Remove="Shared\MainLayout.razor" />
+		<_ContentIncludedByDefault Remove="Shared\NavMenu.razor" />
+		<_ContentIncludedByDefault Remove="Shared\SurveyPrompt.razor" />
 	</ItemGroup>
 
 </Project>

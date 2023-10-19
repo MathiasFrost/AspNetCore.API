@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using AspNetCore.API.HTTP;
+using AspNetCore.API.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Primitives;
@@ -14,10 +15,10 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddMediatR(static configuration => configuration.RegisterServicesFromAssemblyContaining<Program>());
 
 // Admin UI
-builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
+// builder.Services.AddRazorPages();
 
 builder.Services.AddCors(static options => options.AddDefaultPolicy(static policyBuilder =>
 {
@@ -88,6 +89,8 @@ builder.Services.AddOAuth2HttpClient<TestHttp>(options =>
     options.Scope = scope;
 });
 
+builder.Services.AddSignalR();
+
 WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -100,7 +103,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseAuthorization();
 
-app.MapBlazorHub();
+app.MapHub<ChatHub>("/Chat");
 app.MapControllers();
 
 app.Run();

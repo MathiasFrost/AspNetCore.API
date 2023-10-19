@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AspNetCore.API.Controllers;
@@ -10,8 +12,13 @@ public class WeatherForecastController : ControllerBase
     };
 
     private readonly ILogger<WeatherForecastController> _logger;
+    private readonly IMediator _mediator;
 
-    public WeatherForecastController(ILogger<WeatherForecastController> logger) => _logger = logger;
+    public WeatherForecastController(ILogger<WeatherForecastController> logger, IMediator mediator)
+    {
+        _logger = logger;
+        _mediator = mediator;
+    }
 
     [HttpGet(Name = "GetWeatherForecast")]
     public IEnumerable<WeatherForecast> Get()
@@ -31,4 +38,39 @@ public class WeatherForecastController : ControllerBase
         Console.WriteLine(dateOnly);
         return dateOnly ?? DateOnly.FromDateTime(DateTime.Today);
     }
+
+    [HttpGet("Test")]
+    public async Task<string> Test(CancellationToken token)
+    {
+        await _mediator.Publish(new MyMessage(), token);
+        return await _mediator.Send(new MyMessage(), token);
+    }
+}
+
+public sealed class MyMessage : INotification, IRequest<string>
+{
+    public string Res { get; set; } = String.Empty;
+}
+
+public sealed class Notify1 : INotificationHandler<MyMessage>
+{
+    public Task Handle(MyMessage notification, CancellationToken cancellationToken)
+    {
+        Console.WriteLine("Test 1");
+        return Task.CompletedTask;
+    }
+}
+
+public sealed class Notify2 : INotificationHandler<MyMessage>
+{
+    public Task Handle(MyMessage notification, CancellationToken cancellationToken)
+    {
+        Console.WriteLine("Test 2");
+        return Task.CompletedTask;
+    }
+}
+
+public sealed class Handler : IRequestHandler<MyMessage, string>
+{
+    public Task<string> Handle(MyMessage request, CancellationToken cancellationToken) => Task.FromResult("Test 3");
 }

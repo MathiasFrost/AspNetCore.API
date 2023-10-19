@@ -28,4 +28,4 @@ public interface IChatHub
 }
 // {"protocol":"json","version":1}
 // {"type":6}
-// {"type":1,"target":"Ping","arguments":["text", "test"]}
+// {"type":1,"target":"Ping","arguments":["text"]}

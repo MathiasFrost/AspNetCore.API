@@ -13,15 +13,12 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.10" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.5" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+		<PackageReference Include="Grpc.AspNetCore" Version="2.49.0" />
+		<PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<_ContentIncludedByDefault Remove="Pages\Shared\MainLayout.razor" />
-		<_ContentIncludedByDefault Remove="Pages\Shared\NavMenu.razor" />
-		<_ContentIncludedByDefault Remove="Pages\Shared\SurveyPrompt.razor" />
-		<_ContentIncludedByDefault Remove="Shared\MainLayout.razor" />
-		<_ContentIncludedByDefault Remove="Shared\NavMenu.razor" />
-		<_ContentIncludedByDefault Remove="Shared\SurveyPrompt.razor" />
+		<Protobuf Include="Protos\greet.proto" GrpcServices="Server" />
 	</ItemGroup>
 
 </Project>

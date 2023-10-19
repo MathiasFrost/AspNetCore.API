@@ -1,0 +1,23 @@
+﻿@model AspNetCore.API.Models.ContactForm
+
+@{
+    Layout = "_Layout";
+}
+
+<h1>Contact Us</h1>
+
+<form asp-action="SubmitForm" method="post">
+    <div>
+        <label for="Name">Name:</label>
+        <input type="text" id="Name" name="Name" asp-for="Name"/>
+    </div>
+    <div>
+        <label for="Email">Email:</label>
+        <input type="email" id="Email" name="Email" asp-for="Email"/>
+    </div>
+    <div>
+        <label for="Message">Message:</label>
+        <textarea id="Message" name="Message" asp-for="Message"></textarea>
+    </div>
+    <button type="submit">Submit</button>
+</form>

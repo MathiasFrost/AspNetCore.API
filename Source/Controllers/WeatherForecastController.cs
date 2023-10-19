@@ -1,5 +1,6 @@
-using System.Text.Json.Nodes;
 using MediatR;
+using System.Data;
+using AspNetCore.API.Database;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AspNetCore.API.Controllers;
@@ -12,12 +13,14 @@ public class WeatherForecastController : ControllerBase
     };
 
     private readonly ILogger<WeatherForecastController> _logger;
+    private readonly DatabaseTds _databaseTds;
     private readonly IMediator _mediator;
 
-    public WeatherForecastController(ILogger<WeatherForecastController> logger, IMediator mediator)
+    public WeatherForecastController(ILogger<WeatherForecastController> logger, IMediator mediator, DatabaseTds databaseTds)
     {
         _logger = logger;
         _mediator = mediator;
+        _databaseTds = databaseTds;
     }
 
     [HttpGet(Name = "GetWeatherForecast")]

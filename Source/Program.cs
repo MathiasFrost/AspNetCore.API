@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using AspNetCore.API.HTTP;
+using AspNetCore.API.Services;
 using AspNetCore.API.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
@@ -11,7 +12,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllersWithViews();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -89,6 +90,11 @@ builder.Services.AddOAuth2HttpClient<TestHttp>(options =>
     options.Scope = scope;
 });
 
+builder.Services.AddGrpc(static options =>
+{
+    options.EnableDetailedErrors = true;
+});
+
 builder.Services.AddSignalR();
 
 WebApplication app = builder.Build();
@@ -105,5 +111,7 @@ app.UseAuthorization();
 
 app.MapHub<ChatHub>("/Chat");
 app.MapControllers();
+
+app.MapGrpcService<GreeterService>();
 
 app.Run();

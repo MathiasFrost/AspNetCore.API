@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using AspNetCore.API.Contracts;
 using AspNetCore.API.HTTP;
-using AspNetCore.API.Services;
 using AspNetCore.API.Hubs;
 using CoreWCF;
 using CoreWCF.Configuration;
@@ -11,7 +10,6 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
-using WeatherForecastService = AspNetCore.API.Services.WeatherForecastService;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -22,9 +20,6 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddMediatR(static configuration => configuration.RegisterServicesFromAssemblyContaining<Program>());
-
-// Admin UI
-// builder.Services.AddRazorPages();
 
 builder.Services.AddCors(static options => options.AddDefaultPolicy(static policyBuilder =>
 {
@@ -95,11 +90,11 @@ builder.Services.AddOAuth2HttpClient<TestHttp>(options =>
     options.Scope = scope;
 });
 
-builder.Services.AddGrpc(static options => { options.EnableDetailedErrors = true; });
+builder.Services.AddGrpc(static options => options.EnableDetailedErrors = true);
 
 builder.Services.AddServiceModelServices();
 builder.Services.AddServiceModelMetadata();
-builder.Services.AddTransient<AspNetCore.API.Contracts.WeatherForecastService>();
+builder.Services.AddTransient<WeatherForecastService>();
 
 builder.Services.AddSignalR();
 
@@ -115,14 +110,14 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseAuthorization();
 
-app.MapHub<ChatHub>("/Chat");
+app.MapHub<WeatherForecastHub>("/WeatherForecast");
 app.MapControllers();
-app.MapGrpcService<WeatherForecastService>();
+app.MapGrpcService<AspNetCore.API.Services.WeatherForecastService>();
 app.UseServiceModel(serviceBuilder =>
 {
     // Add the Echo Service
-    serviceBuilder.AddService<AspNetCore.API.Contracts.WeatherForecastService>();
-    serviceBuilder.AddServiceEndpoint<AspNetCore.API.Contracts.WeatherForecastService, IWeatherForecastService>(new WSHttpBinding(SecurityMode.None), "/WeatherForecastService.svc");
+    serviceBuilder.AddService<WeatherForecastService>();
+    serviceBuilder.AddServiceEndpoint<WeatherForecastService, IWeatherForecastService>(new WSHttpBinding(SecurityMode.None), "/WeatherForecastService.svc");
     var serviceMetadataBehavior = app.Services.GetRequiredService<ServiceMetadataBehavior>();
     serviceMetadataBehavior.HttpGetEnabled = true;
 });

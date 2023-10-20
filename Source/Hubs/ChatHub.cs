@@ -2,27 +2,15 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace AspNetCore.API.Hubs;
 
-public sealed class ChatHub : Hub<IChatHub>
+public sealed class WeatherForecastHub : Hub<IWeatherForecastHub>
 {
-    public override async Task OnConnectedAsync()
-    {
-        Console.WriteLine(Context.ConnectionId);
-        await base.OnConnectedAsync();
-    }
-
-    public override async Task OnDisconnectedAsync(Exception? exception)
-    {
-        Console.WriteLine(Context.ConnectionId);
-        await base.OnDisconnectedAsync(exception);
-    }
-
     public async Task Ping(string text)
     {
         await Clients.All.Pong(text);
     }
 }
 
-public interface IChatHub
+public interface IWeatherForecastHub
 {
     public Task Pong(string text);
 }

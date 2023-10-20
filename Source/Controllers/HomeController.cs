@@ -15,8 +15,8 @@ public class HomeController : Controller
         if (ModelState.IsValid)
             // Process the form, e.g., save to a database or send an email.
             return RedirectToAction("Index");
-        else
-            // If model validation fails, show the form again with validation messages.
-            return View("Index", form);
+
+        // If model validation fails, show the form again with validation messages.
+        return View("Index", form);
     }
 }

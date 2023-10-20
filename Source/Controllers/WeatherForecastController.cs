@@ -1,6 +1,6 @@
-using MediatR;
 using AspNetCore.API.Handlers;
 using AspNetCore.API.Models;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AspNetCore.API.Controllers;

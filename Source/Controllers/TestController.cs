@@ -14,7 +14,7 @@ public sealed class TestController : ControllerBase
             await Task.Delay(1000, token); // Simulate some delay
 
             // Construct and send an SSE message
-            await Response.WriteAsync($"data: Event {i}\n\n", cancellationToken: token);
+            await Response.WriteAsync($"data: Event {i}\n\n", token);
             await Response.Body.FlushAsync(token); // Important to flush the response stream
         }
     }

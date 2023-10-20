@@ -1,10 +1,11 @@
+using AspNetCore.API.Handlers;
 using AspNetCore.API.Models;
 using Grpc.Core;
 using MediatR;
 
 namespace AspNetCore.API.Services;
 
-public class WeatherForecastService : WeatherForecasts.WeatherForecastsBase
+public sealed class WeatherForecastService : WeatherForecasts.WeatherForecastsBase
 {
     private readonly IMediator _mediator;
 
@@ -12,9 +13,9 @@ public class WeatherForecastService : WeatherForecasts.WeatherForecastsBase
 
     public override async Task<WeatherForecastsResponse> Get(WeatherForecastsRequest request, ServerCallContext context)
     {
-        IEnumerable<WeatherForecast> res = await _mediator.Send(new Handlers.WeatherForecastRequest(), context.CancellationToken);
+        IEnumerable<WeatherForecast> res = await _mediator.Send(new WeatherForecastRequest(), context.CancellationToken);
         var response = new WeatherForecastsResponse();
-        response.Forecasts.AddRange(res.Select(forecast => new WeatherForecastResponse {
+        response.Forecasts.AddRange(res.Select(static forecast => new WeatherForecastResponse {
             Date = forecast.Date.ToString("O"),
             TemperatureC = forecast.TemperatureC,
             TemperatureF = forecast.TemperatureF,

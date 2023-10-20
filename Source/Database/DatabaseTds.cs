@@ -14,6 +14,12 @@ public class DatabaseTds : IDisposable
         Connection.Open();
     }
 
+    public void Dispose()
+    {
+        Connection.Close();
+        Connection.Dispose();
+    }
+
     public TdsQueryBuilder Sql(string sql, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
     {
         Transaction = Connection.BeginTransaction(isolationLevel);
@@ -32,7 +38,7 @@ public class DatabaseTds : IDisposable
             Transaction = null;
         }
     }
-    
+
     public void Commit()
     {
         try
@@ -44,11 +50,5 @@ public class DatabaseTds : IDisposable
             Transaction?.Dispose();
             Transaction = null;
         }
-    }
-
-    public void Dispose()
-    {
-        Connection.Close();
-        Connection.Dispose();
     }
 }

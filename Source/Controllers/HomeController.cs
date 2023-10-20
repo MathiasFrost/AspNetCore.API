@@ -1,4 +1,6 @@
-﻿using AspNetCore.API.Models;
+﻿using AspNetCore.API.Handlers;
+using AspNetCore.API.Models;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AspNetCore.API.Controllers;
@@ -6,17 +8,19 @@ namespace AspNetCore.API.Controllers;
 [ApiController, Route("[controller]")]
 public class HomeController : Controller
 {
+    private static readonly ICollection<WeatherForecast> Forecasts = new List<WeatherForecast>();
+
+    private readonly IMediator _mediator;
+
+    public HomeController(IMediator mediator) => _mediator = mediator;
+
     [HttpGet]
-    public ViewResult Index() => View(new ContactForm());
+    public async Task<ViewResult> Index(CancellationToken token) => View((await _mediator.Send(new WeatherForecastRequest(), token)).Concat(Forecasts));
 
-    [HttpPost]
-    public IActionResult SubmitForm([FromForm] ContactForm form)
+    [HttpPost("[action]")]
+    public IActionResult Add([FromForm] WeatherForecast form)
     {
-        if (ModelState.IsValid)
-            // Process the form, e.g., save to a database or send an email.
-            return RedirectToAction("Index");
-
-        // If model validation fails, show the form again with validation messages.
-        return View("Index", form);
+        if (ModelState.IsValid) Forecasts.Add(form);
+        return RedirectToAction("Index");
     }
 }

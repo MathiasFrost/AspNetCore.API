@@ -1,23 +1,50 @@
-﻿@model AspNetCore.API.Models.ContactForm
+﻿@using AspNetCore.API.Models
+
+@model IEnumerable<WeatherForecast>
 
 @{
     Layout = "_Layout";
 }
 
-<h1>Contact Us</h1>
+<!-- Render the existing weather forecasts -->
+<h1>Weather Forecasts</h1>
+<table class="table">
+    <thead>
+    <tr>
+        <th>Date</th>
+        <th>Temperature (°C)</th>
+        <th>Temperature (°F)</th>
+        <th>Summary</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (WeatherForecast forecast in Model)
+    {
+        <tr>
+            <td>@forecast.Date.ToString("O")</td>
+            <td>@forecast.TemperatureC</td>
+            <td>@forecast.TemperatureF</td>
+            <td>@forecast.Summary</td>
+        </tr>
+    }
+    </tbody>
+</table>
 
-<form asp-action="SubmitForm" method="post">
-    <div>
-        <label for="Name">Name:</label>
-        <input type="text" id="Name" name="Name" asp-for="Name"/>
+<!-- Form to add new weather forecasts -->
+<h2>Add a New Weather Forecast</h2>
+<form method="post" action="/Home/Add">
+    <!-- adjust the action URL as needed -->
+    <div class="form-group">
+        <label for="date">Date</label>
+        <input type="date" class="form-control" id="date" name="Date" required>
     </div>
-    <div>
-        <label for="Email">Email:</label>
-        <input type="email" id="Email" name="Email" asp-for="Email"/>
+    <div class="form-group">
+        <label for="temperature">Temperature (°C)</label>
+        <input type="number" class="form-control" id="temperature" name="TemperatureC" required>
     </div>
-    <div>
-        <label for="Message">Message:</label>
-        <textarea id="Message" name="Message" asp-for="Message"></textarea>
+    <div class="form-group">
+        <label for="summary">Summary</label>
+        <input type="text" class="form-control" id="summary" name="Summary" required>
     </div>
-    <button type="submit">Submit</button>
+    <button type="submit" class="btn btn-primary">Add Forecast</button>
 </form>

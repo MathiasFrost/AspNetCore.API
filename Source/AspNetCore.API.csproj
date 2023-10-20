@@ -9,6 +9,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="Dapper" Version="2.1.15" />
+		<PackageReference Include="GraphQL.Server.Transports.AspNetCore" Version="7.6.0" />
+		<PackageReference Include="GraphQL.Server.Ui.Playground" Version="7.6.0" />
 		<PackageReference Include="MediatR" Version="12.1.1" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.12" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.12" />

@@ -1,10 +1,13 @@
 using System.Net.Http.Headers;
+using System.Text.Json;
 using AspNetCore.API.Contracts;
 using AspNetCore.API.HTTP;
 using AspNetCore.API.Hubs;
+using AspNetCore.API.Schemas;
 using CoreWCF;
 using CoreWCF.Configuration;
 using CoreWCF.Description;
+using GraphQL;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Primitives;
@@ -96,6 +99,12 @@ builder.Services.AddServiceModelServices();
 builder.Services.AddServiceModelMetadata();
 builder.Services.AddTransient<WeatherForecastService>();
 
+builder.Services.AddGraphQL(static qlBuilder =>
+{
+    qlBuilder.AddSystemTextJson();
+    qlBuilder.AddSchema<WeatherForecastSchema>();
+});
+
 builder.Services.AddSignalR();
 
 WebApplication app = builder.Build();
@@ -105,11 +114,13 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseGraphQLPlayground();
 }
 
 app.UseCors();
 app.UseAuthorization();
 
+app.UseGraphQL<WeatherForecastSchema>();
 app.MapHub<WeatherForecastHub>("/WeatherForecast");
 app.MapControllers();
 app.MapGrpcService<AspNetCore.API.Services.WeatherForecastService>();

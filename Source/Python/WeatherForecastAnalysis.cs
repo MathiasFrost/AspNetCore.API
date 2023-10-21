@@ -1,14 +1,14 @@
 namespace AspNetCore.API.Python;
 
-public sealed class WeatherForecastAnalysis
+public static class WeatherForecastAnalysis
 {
-    public async Task Run(CancellationToken token)
+    public static async Task Run(WebApplication app)
     {
         var runner = new PythonRunner();
 
         try
         {
-            string result = await runner.RunScript("Python/test.py", "optional_arguments", token);
+            string result = await runner.RunScript("Python/test.py", "optional_arguments", app.Lifetime.ApplicationStopping);
             Console.WriteLine($"Script output: {result}");
         }
         catch (Exception ex)

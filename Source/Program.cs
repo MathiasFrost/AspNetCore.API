@@ -1,5 +1,6 @@
+using System.Net;
 using System.Net.Http.Headers;
-using System.Text.Json;
+using System.Threading.RateLimiting;
 using AspNetCore.API.Contracts;
 using AspNetCore.API.HTTP;
 using AspNetCore.API.Hubs;
@@ -9,10 +10,9 @@ using CoreWCF;
 using CoreWCF.Configuration;
 using CoreWCF.Description;
 using GraphQL;
-using Hangfire;
-using Hangfire.MySql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
@@ -34,6 +34,28 @@ builder.Services.AddCors(static options => options.AddDefaultPolicy(static polic
     policyBuilder.AllowAnyMethod();
     policyBuilder.AllowCredentials();
 }));
+
+builder.Services.AddRateLimiter(static options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, IPAddress>(static partitioner =>
+    {
+        return new RateLimitPartition<IPAddress>(partitioner.Connection.RemoteIpAddress ?? IPAddress.Any, static address =>
+            new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions {
+                PermitLimit = 4,
+                QueueLimit = 2,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                Window = TimeSpan.FromSeconds(12)
+            }));
+    });
+    options.AddFixedWindowLimiter("EX", context =>
+    {
+        context.PermitLimit = 4;
+        context.Window = TimeSpan.FromSeconds(12);
+        context.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        context.QueueLimit = 2;
+    });
+});
 
 IConfigurationSection externalApi = builder.Configuration.GetSection("ExternalAPI");
 IConfigurationSection test = externalApi.GetSection("Test");
@@ -110,23 +132,25 @@ builder.Services.AddGraphQL(static qlBuilder =>
 
 builder.Services.AddSignalR();
 
-builder.Services.AddHostedService<TcpHost>();
+builder.Services.AddHostedService<TestHostedService>();
 
-builder.Services.AddHangfire(configuration => configuration.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-    .UseSimpleAssemblyNameTypeSerializer()
-    .UseRecommendedSerializerSettings()
-    .UseStorage(new MySqlStorage("server=localhost:.0.0.1;uid=root;pwd=root;database={0};Allow User Variables=True", new MySqlStorageOptions {
-        TransactionIsolationLevel = null,
-        QueuePollInterval = default,
-        PrepareSchemaIfNecessary = false,
-        JobExpirationCheckInterval = default,
-        CountersAggregateInterval = default,
-        DashboardJobListLimit = null,
-        TransactionTimeout = default,
-        TablesPrefix = null
-    })));
+// builder.Services.AddHangfire(configuration => configuration.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+// .UseSimpleAssemblyNameTypeSerializer()
+// .UseRecommendedSerializerSettings()
+// .UseStorage(new MySqlStorage("server=localhost:.0.0.1;uid=root;pwd=root;database={0};Allow User Variables=True", new MySqlStorageOptions {
+// TransactionIsolationLevel = null,
+// QueuePollInterval = default,
+// PrepareSchemaIfNecessary = false,
+// JobExpirationCheckInterval = default,
+// CountersAggregateInterval = default,
+// DashboardJobListLimit = null,
+// TransactionTimeout = default,
+// TablesPrefix = null
+// })));
 
 WebApplication app = builder.Build();
+
+app.UseRateLimiter();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -139,10 +163,10 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseAuthorization();
 
-app.UseGraphQL<WeatherForecastSchema>();
+app.UseGraphQL<WeatherForecastSchema>(configureMiddleware: static options => options.AuthorizationRequired = true);
 app.MapHub<WeatherForecastHub>("/WeatherForecast");
 app.MapControllers();
-app.MapGrpcService<AspNetCore.API.Services.WeatherForecastService>();
+app.MapGrpcService<AspNetCore.API.Services.WeatherForecastService>().RequireAuthorization();
 app.UseServiceModel(serviceBuilder =>
 {
     // Add the Echo Service
@@ -151,5 +175,7 @@ app.UseServiceModel(serviceBuilder =>
     var serviceMetadataBehavior = app.Services.GetRequiredService<ServiceMetadataBehavior>();
     serviceMetadataBehavior.HttpGetEnabled = true;
 });
+
+// RecurringJob.AddOrUpdate(nameof(WeatherForecastAnalysis), () => WeatherForecastAnalysis.Run(app), "1 * * * *");
 
 app.Run();

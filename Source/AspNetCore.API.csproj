@@ -25,7 +25,7 @@
 	<ItemGroup>
 		<Protobuf Include="Protos\weatherforecast.proto" GrpcServices="Server" />
 	</ItemGroup>
-	
+
 	<ItemGroup>
 		<None Include="Python\test.py">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

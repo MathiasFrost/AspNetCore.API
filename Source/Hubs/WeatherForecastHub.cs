@@ -16,10 +16,7 @@ public sealed class WeatherForecastHub : Hub<IWeatherForecastHub>
         await Clients.All.Forecasts(await _mediator.Send(new WeatherForecastRequest(), Context.ConnectionAborted), Context.ConnectionAborted);
     }
 
-    public async Task<IEnumerable<WeatherForecast>> Get(string connectionId)
-    {
-        return await _mediator.Send(new WeatherForecastRequest(), Context.ConnectionAborted);
-    }
+    public async Task<IEnumerable<WeatherForecast>> Get(string connectionId) => await _mediator.Send(new WeatherForecastRequest(), Context.ConnectionAborted);
 
     public async Task Ping(string text)
     {

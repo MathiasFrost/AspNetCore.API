@@ -1,14 +1,11 @@
-namespace AspNetCore.API.Python;
-
-using System;
 using System.Diagnostics;
-using System.IO;
+
+namespace AspNetCore.API.Python;
 
 public sealed class PythonRunner
 {
-    public string PythonExecutablePath { get; set; }
-
     public PythonRunner(string pythonExecutablePath = "py") => PythonExecutablePath = pythonExecutablePath;
+    public string PythonExecutablePath { get; set; }
 
     public async Task<string> RunScript(string scriptPath, string arguments, CancellationToken token)
     {

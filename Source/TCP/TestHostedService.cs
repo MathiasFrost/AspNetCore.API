@@ -1,20 +1,18 @@
-using System.Text.Json;
 using AspNetCore.API.Handlers;
 using AspNetCore.API.Models;
-using AspNetCore.API.Python;
 using MediatR;
 
 namespace AspNetCore.API.TCP;
 
-public sealed class TcpHost : IHostedService
+public sealed class TestHostedService : IHostedService
 {
-    private readonly ILogger<TcpHost> _logger;
+    private readonly ILogger<TestHostedService> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly CancellationTokenSource _stoppingCts = new();
     private Task? _executingTask;
     private int _executionCount;
 
-    public TcpHost(ILogger<TcpHost> logger, IServiceScopeFactory serviceScopeFactory)
+    public TestHostedService(ILogger<TestHostedService> logger, IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
         _serviceScopeFactory = serviceScopeFactory;
@@ -80,8 +78,6 @@ public sealed class TcpHost : IHostedService
                     IEnumerable<WeatherForecast> res = await mediator.Send(new WeatherForecastRequest(), stoppingToken);
                     // Console.WriteLine(JsonSerializer.Serialize(res, new JsonSerializerOptions { WriteIndented = true }));
                     Console.WriteLine($"Forecasts: {res.Count()}");
-                    var analysis = new WeatherForecastAnalysis();
-                    await analysis.Run(stoppingToken);
                 }
 
                 failsInARow = 0;

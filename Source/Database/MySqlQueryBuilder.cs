@@ -11,7 +11,8 @@ public readonly record struct MySqlQueryBuilder(DatabaseMySql DatabaseMySql,
     CommandFlags CommandFlags = CommandFlags.Buffered,
     bool KeepTransactionAlive = false)
 {
-    public CommandDefinition CreateCommandDefinition(CancellationToken token) => new(Sql, Params, DatabaseMySql.Transaction, Timeout, CommandType, CommandFlags);
+    public CommandDefinition CreateCommandDefinition(CancellationToken token) =>
+        new(Sql, Params, DatabaseMySql.Transaction, Timeout, CommandType, CommandFlags);
 
     public MySqlQueryBuilder WithParams(object? @params) => this with { Params = @params };
     public MySqlQueryBuilder WithTimeout(int timeout) => this with { Timeout = timeout };

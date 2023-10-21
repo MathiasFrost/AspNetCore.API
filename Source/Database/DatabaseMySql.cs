@@ -1,16 +1,16 @@
 ﻿using System.Data;
-using System.Data.SqlClient;
+using MySqlConnector;
 
 namespace AspNetCore.API.Database;
 
-public class DatabaseTds : IDisposable
+public abstract class DatabaseMySql : IDisposable
 {
-    public readonly SqlConnection Connection;
+    public readonly MySqlConnection Connection;
     public IDbTransaction? Transaction;
 
-    public DatabaseTds(IConfiguration configuration)
+    public DatabaseMySql(IConfiguration configuration)
     {
-        Connection = new SqlConnection(configuration.GetConnectionString("Test"));
+        Connection = new MySqlConnection(configuration.GetConnectionString("Test"));
         Connection.Open();
     }
 
@@ -20,10 +20,10 @@ public class DatabaseTds : IDisposable
         Connection.Dispose();
     }
 
-    public TdsQueryBuilder Sql(string sql, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+    public MySqlQueryBuilder Sql(string sql, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
     {
         Transaction = Connection.BeginTransaction(isolationLevel);
-        return new TdsQueryBuilder(this, sql);
+        return new MySqlQueryBuilder(this, sql);
     }
 
     public void Rollback()

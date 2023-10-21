@@ -4,10 +4,13 @@ using AspNetCore.API.Contracts;
 using AspNetCore.API.HTTP;
 using AspNetCore.API.Hubs;
 using AspNetCore.API.Schemas;
+using AspNetCore.API.TCP;
 using CoreWCF;
 using CoreWCF.Configuration;
 using CoreWCF.Description;
 using GraphQL;
+using Hangfire;
+using Hangfire.MySql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Primitives;
@@ -106,6 +109,22 @@ builder.Services.AddGraphQL(static qlBuilder =>
 });
 
 builder.Services.AddSignalR();
+
+builder.Services.AddHostedService<TcpHost>();
+
+builder.Services.AddHangfire(configuration => configuration.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseStorage(new MySqlStorage("server=localhost:.0.0.1;uid=root;pwd=root;database={0};Allow User Variables=True", new MySqlStorageOptions {
+        TransactionIsolationLevel = null,
+        QueuePollInterval = default,
+        PrepareSchemaIfNecessary = false,
+        JobExpirationCheckInterval = default,
+        CountersAggregateInterval = default,
+        DashboardJobListLimit = null,
+        TransactionTimeout = default,
+        TablesPrefix = null
+    })));
 
 WebApplication app = builder.Build();
 

@@ -32,7 +32,7 @@ public sealed class OAuth2Controller : ControllerBase
             Secure = false,
             SameSite = SameSiteMode.Lax,
             HttpOnly = true,
-            MaxAge = TimeSpan.FromDays(90),
+            MaxAge = TimeSpan.FromHours(1),
             IsEssential = true
         });
     }

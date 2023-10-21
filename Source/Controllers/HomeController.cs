@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace AspNetCore.API.Controllers;
 
 [ApiController, Route("[controller]")]
-public class HomeController : Controller
+public sealed class HomeController : Controller
 {
     private static readonly ICollection<WeatherForecast> Forecasts = new List<WeatherForecast>();
 

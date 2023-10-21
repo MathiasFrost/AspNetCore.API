@@ -1,91 +1,107 @@
+using System.Text.Json;
+using AspNetCore.API.Handlers;
+using AspNetCore.API.Models;
+using AspNetCore.API.Python;
+using MediatR;
+
 namespace AspNetCore.API.TCP;
 
 public sealed class TcpHost : IHostedService
 {
-    private byte _failureCount;
-    private const byte MaxFailures = 3; // maximum failures before breaking the circuit
-    private DateTime _circuitResetTime;
-    private readonly TimeSpan _circuitOpenTime = TimeSpan.FromMinutes(1); // time to wait before closing the circuit
+    private readonly ILogger<TcpHost> _logger;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly CancellationTokenSource _stoppingCts = new();
+    private Task? _executingTask;
+    private int _executionCount;
+
+    public TcpHost(ILogger<TcpHost> logger, IServiceScopeFactory serviceScopeFactory)
+    {
+        _logger = logger;
+        _serviceScopeFactory = serviceScopeFactory;
+    }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        Task.Run(() => DoWorkAsync(cancellationToken), cancellationToken);
+        _logger.LogInformation("Background service is starting");
+
+        // Run the message loop in the background
+        _executingTask = ExecuteAsync(_stoppingCts.Token);
+
+        // If the task is completed then return it,
+        // this will bubble cancellation and failure to the caller.
+        if (_executingTask.IsCompleted) return _executingTask;
+
+        // Otherwise, it's running
         return Task.CompletedTask;
     }
 
-    private async Task RunBackgroundService(CancellationToken token)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
-        while (!token.IsCancellationRequested)
+        _logger.LogInformation("Background service is stopping");
+
+        // Signal cancellation to the executing method
+        _stoppingCts.Cancel();
+        _stoppingCts.Dispose();
+
+        // Wait until the task completes or the stop token triggers
+        if (_executingTask != null)
+            await Task.WhenAny(_executingTask, Task.Delay(-1, cancellationToken));
+
+        cancellationToken.ThrowIfCancellationRequested();
+    }
+
+    private async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        var recovering = false;
+        byte failsInARow = 0;
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                await DoWorkAsync(token);
+                if (recovering)
+                {
+                    await Task.Delay(10_000, stoppingToken);
+                    recovering = false;
+                }
+
+                _executionCount++;
+
+                if (_executionCount == 3)
+                {
+                    _executionCount = 0;
+                    throw new Exception("Simulated exception on the 3rd loop.");
+                }
+
+                // Simulate some work
+                await using (AsyncServiceScope scope = _serviceScopeFactory.CreateAsyncScope())
+                {
+                    _logger.LogInformation("Background service is doing work");
+                    var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+                    IEnumerable<WeatherForecast> res = await mediator.Send(new WeatherForecastRequest(), stoppingToken);
+                    // Console.WriteLine(JsonSerializer.Serialize(res, new JsonSerializerOptions { WriteIndented = true }));
+                    Console.WriteLine($"Forecasts: {res.Count()}");
+                    var analysis = new WeatherForecastAnalysis();
+                    await analysis.Run(stoppingToken);
+                }
+
+                failsInARow = 0;
             }
             catch (OperationCanceledException)
             {
-                // Handle cancellation
-                break;
+                throw; // ASP.NET Core handles this one
             }
             catch (Exception ex)
             {
-                // Handle other exceptions
-            }
-        }
-    }
-
-    private async Task DoWorkAsync(CancellationToken token)
-    {
-        byte loops = 0;
-        while (!token.IsCancellationRequested)
-        {
-            // Check if the circuit is open
-            if (_failureCount >= MaxFailures)
-            {
-                if (DateTime.UtcNow < _circuitResetTime)
+                _logger.LogError(ex, "An error #{Nr} occurred while executing background service", failsInARow);
+                if (failsInARow++ > 3)
                 {
-                    // Circuit is open; wait for it to close
-                        await Task.Delay(_circuitOpenTime, token);
-
-                    continue;
+                    // Trigger graceful shutdown
+                    _stoppingCts.Cancel();
+                    break;
                 }
 
-                // Reset the circuit and failure count
-                _failureCount = 0;
-            }
-
-            try
-            {
-                // Simulated work
-                Console.WriteLine($"PrePing: {_failureCount}");
-                await Task.Delay(2_000, token);
-                Console.WriteLine($"Ping: {_failureCount}");
-                await Task.Delay(2_000, token);
-
-                // Test exception after 10 loops
-                if (loops > 10) throw new Exception("Test exception");
-
-                loops++;
-            }
-            catch (Exception ex)
-            {
-                // Log the exception (not shown here)
-                Console.WriteLine($"Exception: {ex.Message}");
-
-                _failureCount++;
-                if (_failureCount >= MaxFailures)
-                {
-                    // Open the circuit
-                    _circuitResetTime = DateTime.UtcNow.Add(_circuitOpenTime);
-                    Console.WriteLine("Circuit open");
-                }
+                recovering = true;
             }
         }
-    }
-
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        // Stop your TCP listener logic here
-        Console.WriteLine("Shutting down TCP host");
-        return Task.CompletedTask;
     }
 }

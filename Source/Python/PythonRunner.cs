@@ -8,7 +8,7 @@ public sealed class PythonRunner
 {
     public string PythonExecutablePath { get; set; }
 
-    public PythonRunner(string pythonExecutablePath = "python") => PythonExecutablePath = pythonExecutablePath;
+    public PythonRunner(string pythonExecutablePath = "py") => PythonExecutablePath = pythonExecutablePath;
 
     public async Task<string> RunScript(string scriptPath, string arguments, CancellationToken token)
     {

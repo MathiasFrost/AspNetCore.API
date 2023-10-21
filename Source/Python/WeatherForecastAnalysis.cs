@@ -1,6 +1,6 @@
 namespace AspNetCore.API.Python;
 
-public class WeatherForecastAnalysis
+public sealed class WeatherForecastAnalysis
 {
     public async Task Run(CancellationToken token)
     {
@@ -8,7 +8,7 @@ public class WeatherForecastAnalysis
 
         try
         {
-            string result = await runner.RunScript("path/to/your/python/script.py", "optional_arguments", token);
+            string result = await runner.RunScript("Python/test.py", "optional_arguments", token);
             Console.WriteLine($"Script output: {result}");
         }
         catch (Exception ex)

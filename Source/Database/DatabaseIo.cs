@@ -1,16 +1,17 @@
 ﻿using System.Data;
-using MySqlConnector;
+using JetBrains.Annotations;
+using Microsoft.Data.Sqlite;
 
 namespace AspNetCore.API.Database;
 
-public abstract class DatabaseMySql : IDisposable
+public abstract class DatabaseIo : IDisposable
 {
-    public readonly MySqlConnection Connection;
-    public IDbTransaction? Transaction;
+    internal readonly SqliteConnection Connection;
+    internal IDbTransaction? Transaction;
 
-    protected DatabaseMySql(string connectionString)
+    protected DatabaseIo(string connectionString)
     {
-        Connection = new MySqlConnection(connectionString);
+        Connection = new SqliteConnection(connectionString);
         Connection.Open();
     }
 
@@ -18,14 +19,16 @@ public abstract class DatabaseMySql : IDisposable
     {
         Connection.Close();
         Connection.Dispose();
+        GC.SuppressFinalize(this);
     }
 
-    public MySqlQueryBuilder Sql(string sql, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+    internal IoQueryBuilder Sql(string sql, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
     {
         Transaction = Connection.BeginTransaction(isolationLevel);
-        return new MySqlQueryBuilder(this, sql);
+        return new IoQueryBuilder(this, sql);
     }
 
+    [PublicAPI]
     public void Rollback()
     {
         try
@@ -39,6 +42,7 @@ public abstract class DatabaseMySql : IDisposable
         }
     }
 
+    [PublicAPI]
     public void Commit()
     {
         try

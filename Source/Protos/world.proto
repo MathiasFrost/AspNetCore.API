@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+option csharp_namespace = "AspNetCore.API";
+
+package world;
+
+// The World service definition.
+service Worlds {
+  // Sends a greeting
+  rpc Get (WorldsRequest) returns (WorldsResponse);
+}
+
+// The request message
+message WorldsRequest {
+//  string name = 1;
+}
+
+// The response message
+message WorldResponse {
+  int64 id = 1;
+  string theme = 2;
+  string ecosystem = 3;
+  int64 population = 4;
+  double avg_surface_temp = 5;  // Consider converting decimal to double for gRPC
+  string name = 6;
+}
+
+// A collection of Worlds
+message WorldsResponse {
+  repeated WorldResponse worlds = 1;
+}

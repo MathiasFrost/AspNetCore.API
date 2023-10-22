@@ -5,7 +5,7 @@ namespace AspNetCore.API.HTTP;
 
 public sealed class AccessTokenProvider
 {
-    private static short fetches;
+    private static short _fetches;
     private readonly ConcurrentDictionary<string, string> _cachedTokens = new();
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly OpenIdConfigurationProvider _openIdConfigurationProvider;
@@ -17,7 +17,7 @@ public sealed class AccessTokenProvider
         _openIdConfigurationProvider = openIdConfigurationProvider;
     }
 
-    public async Task<string> FetchTokenAsync(string authority, string clientId, string clientSecret, string scope, bool forceFetch, CancellationToken token)
+    internal async Task<string> FetchTokenAsync(string authority, string clientId, string clientSecret, string scope, bool forceFetch, CancellationToken token)
     {
         // Try to retrieve a cached token for the given scope.
         if (!forceFetch && _cachedTokens.TryGetValue(scope, out string? cachedToken) && !String.IsNullOrEmpty(cachedToken)) return cachedToken;
@@ -44,8 +44,8 @@ public sealed class AccessTokenProvider
             };
             OpenIdConnectConfiguration config = await _openIdConfigurationProvider.GetConfigurationAsync(authority, token);
             HttpResponseMessage response = await httpClient.PostAsync(config.TokenEndpoint, new FormUrlEncodedContent(data), token);
-            fetches++;
-            Console.WriteLine($"#########################\n{fetches}\n######################");
+            _fetches++;
+            Console.WriteLine($"#########################\n{_fetches}\n######################");
 
             if (response.IsSuccessStatusCode)
             {

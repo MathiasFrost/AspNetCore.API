@@ -13,7 +13,7 @@ using CoreWCF.Configuration;
 using CoreWCF.Description;
 using GraphQL;
 using Hangfire;
-using Hangfire.MySql;
+using Hangfire.Storage.SQLite;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.RateLimiting;
@@ -25,12 +25,9 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllersWithViews();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddMediatR(static configuration => configuration.RegisterServicesFromAssemblyContaining<Program>());
+// Request filtering
 
+// CORS
 builder.Services.AddCors(static options => options.AddDefaultPolicy(static policyBuilder =>
 {
     policyBuilder.WithOrigins("http://localhost:5173");
@@ -39,6 +36,7 @@ builder.Services.AddCors(static options => options.AddDefaultPolicy(static polic
     policyBuilder.AllowCredentials();
 }));
 
+// Rate limiting
 builder.Services.AddRateLimiter(static options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -61,6 +59,7 @@ builder.Services.AddRateLimiter(static options =>
     });
 });
 
+// Authentication
 IConfigurationSection externalApi = builder.Configuration.GetSection("ExternalAPI");
 IConfigurationSection test = externalApi.GetSection("Test");
 var baseAddress = test.GetValue<string>("BaseAddress")!;
@@ -112,6 +111,11 @@ builder.Services.AddAuthentication("Dynamic")
         };
     });
 
+// OpenAPI
+builder.Services.AddSwaggerGen();
+builder.Services.AddEndpointsApiExplorer();
+
+// External API
 builder.Services.AddOAuth2HttpClient<TestHttp>(options =>
 {
     options.BaseAddress = new Uri(baseAddress);
@@ -122,32 +126,46 @@ builder.Services.AddOAuth2HttpClient<TestHttp>(options =>
     options.Scope = scope;
 });
 
+// Databases
 builder.Services.AddScoped<AspNetCoreDb>();
 
-builder.Services.AddGrpc(static options => options.EnableDetailedErrors = true);
+// Mediator
+builder.Services.AddMediatR(static configuration => configuration.RegisterServicesFromAssemblyContaining<Program>());
 
-builder.Services.AddServiceModelServices();
-builder.Services.AddServiceModelMetadata();
-builder.Services.AddTransient<WeatherForecastService>();
+// HTTP REST Controllers
+builder.Services.AddControllersWithViews();
 
+// GraphQL Schemas
 builder.Services.AddGraphQL(static qlBuilder =>
 {
     qlBuilder.AddSystemTextJson();
-    qlBuilder.AddSchema<WeatherForecastSchema>();
+    qlBuilder.AddSchema<WorldSchema>();
 });
 
+// WebSocket Hubs
 builder.Services.AddSignalR();
 
+// gRPC Services
+builder.Services.AddGrpc(static options => options.EnableDetailedErrors = true);
+
+// SOAP Services
+builder.Services.AddServiceModelServices();
+builder.Services.AddServiceModelMetadata();
+builder.Services.AddTransient<WorldService>();
+
+// Hosted service test
 builder.Services.AddHostedService<TestHostedService>();
 
+// CRON jobs
 builder.Services.AddHangfireServer(static options => options.WorkerCount = 1);
-builder.Services.AddHangfire(configuration => configuration.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+builder.Services.AddHangfire(static configuration => configuration.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
     .UseSimpleAssemblyNameTypeSerializer()
     .UseRecommendedSerializerSettings()
-    .UseStorage(new MySqlStorage(builder.Configuration.GetConnectionString("AspNetCore.DB"), new MySqlStorageOptions())));
+    .UseSQLiteStorage("Database/AspNetCore.db"));
 
-builder.Services.AddTransient<WeatherForecastAnalysis>();
+builder.Services.AddTransient<WorldAnalysis>();
 
+// Build app
 WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -162,22 +180,22 @@ app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseGraphQLPlayground();
-app.UseHangfireDashboard(options: new DashboardOptions{StatsPollingInterval = 200});
+app.UseHangfireDashboard(options: new DashboardOptions { StatsPollingInterval = 20_000 });
 
 // Transport protocols
 app.MapControllers();
-app.UseGraphQL<WeatherForecastSchema>(configureMiddleware: static options => options.AuthorizationRequired = true);
-app.MapHub<WeatherForecastHub>("/WeatherForecast");
-app.MapGrpcService<AspNetCore.API.Services.WeatherForecastService>().RequireAuthorization();
+app.UseGraphQL<WorldSchema>(configureMiddleware: static options => options.AuthorizationRequired = true);
+app.MapHub<WorldHub>("/World");
+app.MapGrpcService<AspNetCore.API.Services.WorldService>().RequireAuthorization();
 app.UseServiceModel(serviceBuilder =>
 {
-    // Add the Echo Service
-    serviceBuilder.AddService<WeatherForecastService>();
-    serviceBuilder.AddServiceEndpoint<WeatherForecastService, IWeatherForecastService>(new WSHttpBinding(SecurityMode.None), "/WeatherForecastService.svc");
+    serviceBuilder.AddService<WorldService>();
+    serviceBuilder.AddServiceEndpoint<WorldService, IWorldService>(new WSHttpBinding(SecurityMode.None), "/WorldService.svc");
     var serviceMetadataBehavior = app.Services.GetRequiredService<ServiceMetadataBehavior>();
     serviceMetadataBehavior.HttpGetEnabled = true;
 });
 
-RecurringJob.AddOrUpdate<WeatherForecastAnalysis>(nameof(WeatherForecastAnalysis), static job => job.Run(), "1 * * * *");
+// CRON jobs
+RecurringJob.AddOrUpdate<WorldAnalysis>(nameof(WorldAnalysis), static job => job.Run(), "1 * * * *");
 
 app.Run();

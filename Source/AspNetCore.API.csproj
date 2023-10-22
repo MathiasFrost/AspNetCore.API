@@ -12,18 +12,25 @@
 		<PackageReference Include="GraphQL.Server.Transports.AspNetCore" Version="7.6.0" />
 		<PackageReference Include="GraphQL.Server.Ui.Playground" Version="7.6.0" />
 		<PackageReference Include="Hangfire.AspNetCore" Version="1.8.6" />
-		<PackageReference Include="Hangfire.MySqlStorage" Version="2.0.3" />
+		<PackageReference Include="Hangfire.Storage.SQLite" Version="0.3.4" />
+		<PackageReference Include="JetBrains.Annotations" Version="2023.2.0" />
 		<PackageReference Include="MediatR" Version="12.1.1" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.12" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.12" />
-		<PackageReference Include="MySqlConnector" Version="2.2.7" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.12" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 		<PackageReference Include="CoreWCF.Http" Version="1.4.1" />
 		<PackageReference Include="Grpc.AspNetCore" Version="2.58.0" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Protobuf Include="Protos\weatherforecast.proto" GrpcServices="Server" />
+		<Protobuf Include="Protos\world.proto" GrpcServices="Server" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="Database\AspNetCore.db">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 
 	<ItemGroup>

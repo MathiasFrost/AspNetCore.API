@@ -1,5 +1,4 @@
 ﻿using AspNetCore.API.Handlers;
-using AspNetCore.API.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,19 +7,17 @@ namespace AspNetCore.API.Controllers;
 [ApiController, Route("[controller]")]
 public sealed class HomeController : Controller
 {
-    private static readonly ICollection<WeatherForecast> Forecasts = new List<WeatherForecast>();
-
     private readonly IMediator _mediator;
 
     public HomeController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet]
-    public async Task<ViewResult> Index(CancellationToken token) => View((await _mediator.Send(new WeatherForecastRequest(), token)).Concat(Forecasts));
+    public async Task<ViewResult> Index(CancellationToken token) => View(await _mediator.Send(new GetWorldsRequest(), token));
 
     [HttpPost("[action]")]
-    public IActionResult Add([FromForm] WeatherForecast form)
+    public async Task<RedirectToActionResult> Generate([FromForm] int worldsToGenerate)
     {
-        if (ModelState.IsValid) Forecasts.Add(form);
+        if (ModelState.IsValid) await _mediator.Publish(new GenerateWorldsRequest { WorldsToGenerate = worldsToGenerate });
         return RedirectToAction("Index");
     }
 }

@@ -10,7 +10,7 @@ public sealed class OpenIdConfigurationProvider
 
     public OpenIdConfigurationProvider(IHttpClientFactory httpClientFactory) => _httpClientFactory = httpClientFactory;
 
-    public async Task<OpenIdConnectConfiguration> GetConfigurationAsync(string authority, CancellationToken token)
+    internal async Task<OpenIdConnectConfiguration> GetConfigurationAsync(string authority, CancellationToken token)
     {
         // Try to get cached configuration
         if (_configurations.TryGetValue(authority, out OpenIdConnectConfiguration? cachedConfig)) return cachedConfig;

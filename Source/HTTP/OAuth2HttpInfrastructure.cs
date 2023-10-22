@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using JetBrains.Annotations;
 
 namespace AspNetCore.API.HTTP;
 
@@ -40,6 +41,7 @@ internal static class OAuth2HttpInfrastructure
     }
 }
 
+[PublicAPI]
 public sealed class OAuth2HttpClientOptions
 {
     public string Authority { get; set; } = String.Empty;

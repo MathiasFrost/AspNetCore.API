@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 
 namespace AspNetCore.API.HTTP;
 
-public sealed class OAuth2MessageHandler : DelegatingHandler
+internal sealed class OAuth2MessageHandler : DelegatingHandler
 {
     private readonly AccessTokenProvider _accessTokenProvider;
     private readonly string _authority;

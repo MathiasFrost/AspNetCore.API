@@ -75,9 +75,10 @@ public sealed class TestHostedService : IHostedService
                 {
                     _logger.LogInformation("Background service is doing work");
                     var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-                    IEnumerable<WeatherForecast> res = await mediator.Send(new WeatherForecastRequest(), stoppingToken);
+                    IEnumerable<World> res = await mediator.Send(new GetWorldsRequest(), stoppingToken);
                     // Console.WriteLine(JsonSerializer.Serialize(res, new JsonSerializerOptions { WriteIndented = true }));
                     Console.WriteLine($"Forecasts: {res.Count()}");
+                    await Task.Delay(10_000, stoppingToken);
                 }
 
                 failsInARow = 0;

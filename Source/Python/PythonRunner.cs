@@ -2,19 +2,19 @@ using System.Diagnostics;
 
 namespace AspNetCore.API.Python;
 
-public sealed class PythonRunner
+public abstract class PythonRunner
 {
-    public PythonRunner(string pythonExecutablePath = "py") => PythonExecutablePath = pythonExecutablePath;
-    public string PythonExecutablePath { get; set; }
+    private readonly string _pythonExecutablePath;
+    protected PythonRunner(string pythonExecutablePath) => _pythonExecutablePath = pythonExecutablePath;
 
-    public async Task<string> RunScript(string scriptPath, string arguments, CancellationToken token)
+    protected async Task<string> RunScript(string scriptPath, string arguments, CancellationToken token)
     {
         try
         {
             if (!File.Exists(scriptPath)) throw new FileNotFoundException($"Python script not found: {scriptPath}");
 
             var startInfo = new ProcessStartInfo {
-                FileName = PythonExecutablePath,
+                FileName = _pythonExecutablePath,
                 Arguments = $"\"{scriptPath}\" {arguments}",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,

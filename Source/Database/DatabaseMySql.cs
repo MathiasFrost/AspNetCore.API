@@ -8,9 +8,9 @@ public abstract class DatabaseMySql : IDisposable
     public readonly MySqlConnection Connection;
     public IDbTransaction? Transaction;
 
-    public DatabaseMySql(IConfiguration configuration)
+    protected DatabaseMySql(string connectionString)
     {
-        Connection = new MySqlConnection(configuration.GetConnectionString("Test"));
+        Connection = new MySqlConnection(connectionString);
         Connection.Open();
     }
 

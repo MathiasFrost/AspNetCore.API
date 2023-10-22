@@ -1,10 +1,22 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AspNetCore.API.Database;
+using AspNetCore.API.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AspNetCore.API.Controllers;
 
 [ApiController, Route("[controller]/[action]")]
 public sealed class TestController : ControllerBase
 {
+    private readonly AspNetCoreDb _aspNetCoreDb;
+
+    public TestController(AspNetCoreDb aspNetCoreDb) => _aspNetCoreDb = aspNetCoreDb;
+
+    [HttpGet]
+    public async Task<IEnumerable<WeatherForecast>> Forecasts(CancellationToken token)
+    {
+        return await _aspNetCoreDb.Sql("SELECT * FROM weatherforecasts").QueryToList<WeatherForecast>(token);
+    }
+    
     [HttpGet]
     public async Task Get(CancellationToken token)
     {

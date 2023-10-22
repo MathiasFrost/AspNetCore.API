@@ -12,7 +12,7 @@ public readonly record struct MySqlQueryBuilder(DatabaseMySql DatabaseMySql,
     bool KeepTransactionAlive = false)
 {
     public CommandDefinition CreateCommandDefinition(CancellationToken token) =>
-        new(Sql, Params, DatabaseMySql.Transaction, Timeout, CommandType, CommandFlags);
+        new(Sql, Params, DatabaseMySql.Transaction, Timeout, CommandType, CommandFlags, token);
 
     public MySqlQueryBuilder WithParams(object? @params) => this with { Params = @params };
     public MySqlQueryBuilder WithTimeout(int timeout) => this with { Timeout = timeout };
@@ -21,7 +21,7 @@ public readonly record struct MySqlQueryBuilder(DatabaseMySql DatabaseMySql,
     public MySqlQueryBuilder KeepAlive() => this with { KeepTransactionAlive = true };
     public MySqlQueryBuilder Commit() => this with { KeepTransactionAlive = false };
 
-    public async Task<List<T>> QueryToListAsync<T>(CancellationToken token)
+    public async Task<List<T>> QueryToList<T>(CancellationToken token)
     {
         IEnumerable<T> res = await DatabaseMySql.Connection.QueryAsync<T>(CreateCommandDefinition(token));
         if (!KeepTransactionAlive) DatabaseMySql.Commit();

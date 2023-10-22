@@ -10,7 +10,7 @@ namespace AspNetCore.API.Contracts;
 public interface IWeatherForecastService
 {
     [OperationContract]
-    IEnumerable<CompositeType> Get();
+    IEnumerable<WeatherForecastContract> Get();
 }
 
 [ServiceBehavior(IncludeExceptionDetailInFaults = true)]
@@ -20,15 +20,19 @@ public sealed class WeatherForecastService : IWeatherForecastService
 
     public WeatherForecastService(IMediator mediator) => _mediator = mediator;
 
-    public IEnumerable<CompositeType> Get() =>
-        _mediator.Send(new WeatherForecastRequest()).ConfigureAwait(false).GetAwaiter().GetResult().Select(static forecast => new CompositeType(forecast));
+    public IEnumerable<WeatherForecastContract> Get() =>
+        _mediator.Send(new WeatherForecastRequest())
+            .ConfigureAwait(false)
+            .GetAwaiter()
+            .GetResult()
+            .Select(static forecast => new WeatherForecastContract(forecast));
 }
 
 // Use a data contract as illustrated in the sample below to add composite types to service operations.
 [DataContract]
-public sealed class CompositeType
+public sealed class WeatherForecastContract
 {
-    public CompositeType(WeatherForecast weatherForecast)
+    public WeatherForecastContract(WeatherForecast weatherForecast)
     {
         Date = weatherForecast.Date.ToString("O");
         TemperatureC = weatherForecast.TemperatureC;

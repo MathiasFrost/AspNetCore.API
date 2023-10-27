@@ -5,7 +5,7 @@ using CoreWCF;
 using JetBrains.Annotations;
 using MediatR;
 
-namespace AspNetCore.API.Contracts;
+namespace AspNetCore.API.ServiceContracts;
 
 [PublicAPI, ServiceContract]
 public interface IWorldService

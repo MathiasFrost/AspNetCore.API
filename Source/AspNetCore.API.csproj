@@ -17,12 +17,16 @@
 		<PackageReference Include="MassTransit.DapperIntegration" Version="8.1.1" />
 		<PackageReference Include="JetBrains.Annotations" Version="2023.2.0" />
 		<PackageReference Include="MediatR" Version="12.1.1" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.12" />
-		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.12" />
-		<PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.12" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.13" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.13" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.13" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 		<PackageReference Include="CoreWCF.Http" Version="1.4.1" />
 		<PackageReference Include="Grpc.AspNetCore" Version="2.58.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="AspNetCore.API.Test" />
 	</ItemGroup>
 
 	<ItemGroup>

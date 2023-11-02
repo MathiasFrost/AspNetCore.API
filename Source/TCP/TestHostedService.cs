@@ -77,7 +77,7 @@ public sealed class TestHostedService : IHostedService
                     var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
                     IEnumerable<World> res = await mediator.Send(new GetWorldsRequest(), stoppingToken);
                     // Console.WriteLine(JsonSerializer.Serialize(res, new JsonSerializerOptions { WriteIndented = true }));
-                    Console.WriteLine($"Forecasts: {res.Count()}");
+                    Console.WriteLine($"Worlds: {res.Count()}");
                     await Task.Delay(10_000, stoppingToken);
                 }
 

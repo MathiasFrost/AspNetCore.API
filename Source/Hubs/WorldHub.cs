@@ -27,7 +27,7 @@ public sealed class WorldHub : Hub<IWorldHub>
 public interface IWorldHub
 {
     public Task Pong(string text, CancellationToken token);
-    public Task Worlds(IEnumerable<World> forecasts, CancellationToken token);
+    public Task Worlds(IEnumerable<World> worlds, CancellationToken token);
 }
 
 // {"protocol":"json","version":1}

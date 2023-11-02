@@ -26,7 +26,7 @@ public sealed class WorldService : IWorldService
             .ConfigureAwait(false)
             .GetAwaiter()
             .GetResult()
-            .Select(static forecast => new WorldContract(forecast));
+            .Select(static world => new WorldContract(world));
 }
 
 // Use a data contract as illustrated in the sample below to add composite types to service operations.

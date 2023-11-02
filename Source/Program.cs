@@ -4,6 +4,7 @@ using System.Threading.RateLimiting;
 using AspNetCore.API.Database;
 using AspNetCore.API.HTTP;
 using AspNetCore.API.Hubs;
+using AspNetCore.API.OpenAPI;
 using AspNetCore.API.Python;
 using AspNetCore.API.Schemas;
 using AspNetCore.API.ServiceContracts;
@@ -197,6 +198,7 @@ app.UseAuthorization();
 // Additional UI
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseOpenApi();
 app.UseGraphQLPlayground();
 app.UseHangfireDashboard(options: new DashboardOptions { StatsPollingInterval = 20_000 });
 

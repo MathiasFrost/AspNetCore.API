@@ -112,10 +112,6 @@ builder.Services.AddAuthentication("Dynamic")
         };
     });
 
-// OpenAPI
-builder.Services.AddSwaggerGen();
-builder.Services.AddEndpointsApiExplorer();
-
 // External API
 builder.Services.AddOAuth2HttpClient<TestHttp>(options =>
 {
@@ -175,6 +171,10 @@ builder.Services.AddTransient<WorldService>();
 
 // builder.Services.AddHostedService<TestHostedService>();
 
+// OpenAPI
+builder.Services.AddSwaggerGen();
+builder.Services.AddEndpointsApiExplorer();
+
 // CRON jobs
 builder.Services.AddHangfireServer(static options => options.WorkerCount = 1);
 builder.Services.AddHangfire(static configuration => configuration.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -196,8 +196,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Additional UI
-// app.UseSwagger();
-// app.UseSwaggerUI();
+app.UseSwagger();
+app.UseSwaggerUI();
 app.UseOpenApi();
 app.UseGraphQLPlayground();
 app.UseHangfireDashboard(options: new DashboardOptions { StatsPollingInterval = 20_000 });

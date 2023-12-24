@@ -1,11 +1,10 @@
 ﻿using System.Reflection;
-using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace AspNetCore.API.OpenAPI;
 
-public static class OpenApiInfrastructure
+internal static class OpenApiInfrastructure
 {
     public static IApplicationBuilder UseOpenApi(this IApplicationBuilder app)
     {
@@ -15,7 +14,11 @@ public static class OpenApiInfrastructure
             {
                 if (context.Request.Path != "/openapi") return;
 
-                var builder = new StringBuilder();
+                var res = new OpenApiDocument {
+                    OpenApi = "3.0.1",
+                    Info = new Info { Title = AppDomain.CurrentDomain.FriendlyName, Version = "1.0" },
+                    Paths = new Dictionary<string, Dictionary<string, Path>>()
+                };
 
                 Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
                 foreach (Assembly assembly in assemblies)
@@ -31,27 +34,27 @@ public static class OpenApiInfrastructure
                     }
 
                     // Iterate through each type in the assembly
-                    foreach (Type type in types)
+                    foreach (Type controller in types)
                     {
                         // HTTP REST Controllers
                         // Check if the type inherits from ControllerBase and has the ApiController attribute
-                        if (type.IsSubclassOf(typeof(ControllerBase)) && Attribute.IsDefined(type, typeof(ApiControllerAttribute)))
+                        if (controller.IsSubclassOf(typeof(ControllerBase)) && Attribute.IsDefined(controller, typeof(ApiControllerAttribute)))
                         {
                             // Retrieve the Route attribute if it exists
-                            var routeAttr = type.GetCustomAttribute<RouteAttribute>();
+                            var routeAttr = controller.GetCustomAttribute<RouteAttribute>();
                             if (routeAttr != null)
                             {
-                                // Display the type name and the Route attribute value
-                                string route = "/" + routeAttr.Template.Replace("[controller]", type.Name);
-                                builder.AppendLine($"Controller: {type.Name}: {route}");
-
-                                IEnumerable<MethodInfo> methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance);
+                                IEnumerable<MethodInfo> methods = controller.GetMethods(BindingFlags.Public | BindingFlags.Instance);
                                 foreach (MethodInfo method in methods)
                                 {
                                     if (method.GetCustomAttributes().FirstOrDefault(static attribute => attribute is HttpMethodAttribute) is not
                                         HttpMethodAttribute httpMethod) continue;
 
-                                    builder.AppendLine($"\tEndpoint: {httpMethod.HttpMethods.FirstOrDefault()}: /{method.Name}/{httpMethod.Template}");
+                                    string endpoint = GetEndpoint(controller, routeAttr.Template, method, httpMethod.Template);
+                                    var path = new Path { Tags = new List<string> { controller.Name } };
+                                    string m = httpMethod.HttpMethods.First().ToLower();
+                                    if (res.Paths.TryGetValue(endpoint, out Dictionary<string, Path>? value)) value.Add(m, path);
+                                    else res.Paths.Add(endpoint, new Dictionary<string, Path> { { m, path } });
                                 }
                             }
                         }
@@ -64,8 +67,24 @@ public static class OpenApiInfrastructure
                     }
                 }
 
-                await context.Response.WriteAsync(builder.ToString(), context.RequestAborted);
+                await context.Response.WriteAsJsonAsync(res, context.RequestAborted);
             };
         });
+    }
+
+    private static string GetEndpoint(MemberInfo controller, string template, MemberInfo method, string? methodTemplate)
+    {
+        var replacements = new Dictionary<string, string> {
+            { "[controller]", controller.Name.EndsWith("Controller") ? controller.Name[..^10] : controller.Name },
+            { "[action]", method.Name }
+        };
+
+        string @base;
+        if (methodTemplate?.StartsWith('/') is true) @base = methodTemplate;
+        else if (String.IsNullOrEmpty(methodTemplate)) @base = template;
+        else if (template.EndsWith('/')) @base = template + methodTemplate;
+        else @base = $"{template}/{methodTemplate}";
+
+        return replacements.Aggregate(@base, static (current, pair) => current.Replace(pair.Key, pair.Value));
     }
 }

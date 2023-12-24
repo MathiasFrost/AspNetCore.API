@@ -6,7 +6,8 @@ using Microsoft.Data.Sqlite;
 namespace AspNetCore.API.Database;
 
 [PublicAPI]
-public readonly record struct IoQueryBuilder(DatabaseIo DatabaseIo,
+public readonly record struct IoQueryBuilder(
+    DatabaseIo DatabaseIo,
     string Sql,
     object? Params = null,
     int Timeout = 60,

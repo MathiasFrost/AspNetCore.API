@@ -2,5 +2,5 @@ namespace AspNetCore.API.Contracts;
 
 public sealed class GettingStarted
 {
-    public string Value { get; init; }
+    internal string Value { get; init; } = String.Empty;
 }

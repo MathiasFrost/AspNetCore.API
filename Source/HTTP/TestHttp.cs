@@ -15,6 +15,6 @@ internal static class HttpExtensions
     public static async Task<TResult> GetJsonContent<TResult>(this Task<HttpResponseMessage> request)
     {
         HttpResponseMessage res = await request;
-        return await res.Content.ReadFromJsonAsync<TResult>();
+        return await res.Content.ReadFromJsonAsync<TResult>() ?? throw new InvalidOperationException();
     }
 }

@@ -8,13 +8,12 @@ using AspNetCore.API.OpenAPI;
 using AspNetCore.API.Python;
 using AspNetCore.API.Schemas;
 using AspNetCore.API.ServiceContracts;
-using AspNetCore.API.TCP;
+using AspNetCore.API.System;
 using CoreWCF;
 using CoreWCF.Configuration;
 using CoreWCF.Description;
 using GraphQL;
 using Hangfire;
-using MassTransit;
 using Hangfire.Storage.SQLite;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
@@ -22,7 +21,6 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
-using Worker = AspNetCore.API.Contracts.Worker;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -133,7 +131,12 @@ builder.Services.AddOAuth2HttpClient<TestHttp>(options =>
 builder.Services.AddScoped<AspNetCoreDb>();
 
 // Mediator
-builder.Services.AddMediatR(static configuration => configuration.RegisterServicesFromAssemblyContaining<Program>());
+builder.Services.AddSystemMediatR<SomeSystem>(static configuration =>
+{
+    configuration.AddHandlerType(SomeSystem.One, typeof(IOneRequestHandler<,>));
+    configuration.AddHandlerType(SomeSystem.Two, typeof(ITwoRequestHandler<,>));
+    configuration.RegisterSystemServicesFromAssemblyContaining<Program>();
+});
 
 // HTTP REST Controllers
 builder.Services.AddControllersWithViews();
@@ -156,24 +159,21 @@ builder.Services.AddServiceModelServices();
 builder.Services.AddServiceModelMetadata();
 builder.Services.AddTransient<WorldService>();
 
-// Hosted service test
-builder.Services.AddSignalR();
-
 // Message Queue
-builder.Services.AddMassTransit(configurator =>
-{
-    configurator.AddSagasFromNamespaceContaining<Worker>();
-    configurator.AddConsumersFromNamespaceContaining<Worker>();
-    configurator.SetDapperSagaRepositoryProvider(builder.Configuration.GetConnectionString("AspNetCore.DB")!, static _ => { });
-    configurator.UsingInMemory(static (context, factoryConfigurator) =>
-    {
-        factoryConfigurator.UseMessageRetry(static configurator => configurator.Immediate(3));
-        factoryConfigurator.ConfigureEndpoints(context);
-    });
-});
-builder.Services.AddHostedService<Worker>();
+// builder.Services.AddMassTransit(configurator =>
+// {
+//     configurator.AddSagasFromNamespaceContaining<Worker>();
+//     configurator.AddConsumersFromNamespaceContaining<Worker>();
+//     configurator.SetDapperSagaRepositoryProvider(builder.Configuration.GetConnectionString("AspNetCore.DB")!, static _ => { });
+//     configurator.UsingInMemory(static (context, factoryConfigurator) =>
+//     {
+//         factoryConfigurator.UseMessageRetry(static configurator => configurator.Immediate(3));
+//         factoryConfigurator.ConfigureEndpoints(context);
+//     });
+// });
+// builder.Services.AddHostedService<Worker>();
 
-builder.Services.AddHostedService<TestHostedService>();
+// builder.Services.AddHostedService<TestHostedService>();
 
 // CRON jobs
 builder.Services.AddHangfireServer(static options => options.WorkerCount = 1);
@@ -196,8 +196,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Additional UI
-app.UseSwagger();
-app.UseSwaggerUI();
+// app.UseSwagger();
+// app.UseSwaggerUI();
 app.UseOpenApi();
 app.UseGraphQLPlayground();
 app.UseHangfireDashboard(options: new DashboardOptions { StatsPollingInterval = 20_000 });

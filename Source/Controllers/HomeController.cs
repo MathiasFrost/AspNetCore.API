@@ -11,8 +11,19 @@ public sealed class HomeController : Controller
 
     public HomeController(IMediator mediator) => _mediator = mediator;
 
-    [HttpGet("[action]")]
-    public string Test() => "haha";
+    [HttpPut("[action]/{str:datetime}")]
+    public (string, int) Test([FromQuery] string test, [FromRoute] DateTime str, [FromForm] MyClass a) => ("haha" + str, (int)a.Class.Test2);
+
+    public sealed class MyClass
+    {
+        public ulong Test { get; init; }
+        public MyOtherClass Class { get; init; }
+    }
+
+    public sealed class MyOtherClass
+    {
+        public decimal Test2 { get; init; }
+    }
 
     [HttpGet]
     public async Task<ViewResult> Index(CancellationToken token) => View(await _mediator.Send(new GetWorldsRequest(), token));

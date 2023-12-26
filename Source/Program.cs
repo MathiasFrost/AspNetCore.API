@@ -8,7 +8,6 @@ using AspNetCore.API.OpenAPI;
 using AspNetCore.API.Python;
 using AspNetCore.API.Schemas;
 using AspNetCore.API.ServiceContracts;
-using AspNetCore.API.System;
 using CoreWCF;
 using CoreWCF.Configuration;
 using CoreWCF.Description;
@@ -127,12 +126,7 @@ builder.Services.AddOAuth2HttpClient<TestHttp>(options =>
 builder.Services.AddScoped<AspNetCoreDb>();
 
 // Mediator
-builder.Services.AddSystemMediatR<SomeSystem>(static configuration =>
-{
-    configuration.AddHandlerType(SomeSystem.One, typeof(IOneRequestHandler<,>));
-    configuration.AddHandlerType(SomeSystem.Two, typeof(ITwoRequestHandler<,>));
-    configuration.RegisterSystemServicesFromAssemblyContaining<Program>();
-});
+builder.Services.AddMediatR(static configuration => configuration.RegisterServicesFromAssemblyContaining<Program>());
 
 // HTTP REST Controllers
 builder.Services.AddControllersWithViews();

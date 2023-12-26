@@ -11,6 +11,9 @@ public sealed class HomeController : Controller
 
     public HomeController(IMediator mediator) => _mediator = mediator;
 
+    [HttpGet("[action]")]
+    public string Test() => "haha";
+
     [HttpGet]
     public async Task<ViewResult> Index(CancellationToken token) => View(await _mediator.Send(new GetWorldsRequest(), token));
 

@@ -56,8 +56,8 @@ public sealed class Response
     [JsonPropertyName("description"), UsedImplicitly]
     public required string Description { get; init; }
 
-    [JsonPropertyName("content"), UsedImplicitly]
-    public required Dictionary<string, Content> Content { get; init; } = new();
+    [JsonPropertyName("content"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull), UsedImplicitly]
+    public required Dictionary<string, Content>? Content { get; init; }
 }
 
 public sealed class Components
@@ -71,8 +71,8 @@ public sealed class Schema
     [JsonPropertyName("type"), UsedImplicitly]
     public required string Type { get; init; }
 
-    [JsonPropertyName("properties"), UsedImplicitly]
-    public required Dictionary<string, Property> Properties { get; init; }
+    [JsonPropertyName("properties"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull), UsedImplicitly]
+    public required Dictionary<string, Property>? Properties { get; init; }
 }
 
 public sealed class Property

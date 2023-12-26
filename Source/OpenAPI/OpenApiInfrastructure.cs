@@ -50,8 +50,10 @@ internal static class OpenApiInfrastructure
                                     if (method.GetCustomAttributes().FirstOrDefault(static attribute => attribute is HttpMethodAttribute) is not
                                         HttpMethodAttribute httpMethod) continue;
 
-                                    string endpoint = GetEndpoint(controller, routeAttr.Template, method, httpMethod.Template);
-                                    var path = new Path { Tags = new List<string> { controller.Name } };
+                                    string endpoint = OpenApiTypeHelper.GetEndpoint(controller, routeAttr.Template, method, httpMethod.Template);
+
+                                    Path path = OpenApiTypeHelper.GetPath(controller, routeAttr.Template, method);
+
                                     string m = httpMethod.HttpMethods.First().ToLower();
                                     if (res.Paths.TryGetValue(endpoint, out Dictionary<string, Path>? value)) value.Add(m, path);
                                     else res.Paths.Add(endpoint, new Dictionary<string, Path> { { m, path } });
@@ -70,21 +72,5 @@ internal static class OpenApiInfrastructure
                 await context.Response.WriteAsJsonAsync(res, context.RequestAborted);
             };
         });
-    }
-
-    private static string GetEndpoint(MemberInfo controller, string template, MemberInfo method, string? methodTemplate)
-    {
-        var replacements = new Dictionary<string, string> {
-            { "[controller]", controller.Name.EndsWith("Controller") ? controller.Name[..^10] : controller.Name },
-            { "[action]", method.Name }
-        };
-
-        string @base;
-        if (methodTemplate?.StartsWith('/') is true) @base = methodTemplate;
-        else if (String.IsNullOrEmpty(methodTemplate)) @base = template;
-        else if (template.EndsWith('/')) @base = template + methodTemplate;
-        else @base = $"{template}/{methodTemplate}";
-
-        return replacements.Aggregate(@base, static (current, pair) => current.Replace(pair.Key, pair.Value));
     }
 }

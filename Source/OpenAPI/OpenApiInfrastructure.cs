@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 
@@ -14,6 +15,21 @@ internal static class OpenApiInfrastructure
             {
                 await next();
                 return;
+            }
+
+            string? executing = Assembly.GetExecutingAssembly().GetName().Name;
+            string? filePath = null;
+            if (executing != null)
+            {
+                var name = $"{executing}.OpenAPI.json";
+                filePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, name);
+                if (File.Exists(filePath))
+                {
+                    string content = await File.ReadAllTextAsync(filePath);
+                    context.Response.ContentType = "application/json; charset=utf-8";
+                    await context.Response.WriteAsync(content, context.RequestAborted);
+                    return;
+                }
             }
 
             var res = new OpenApiDocument {
@@ -54,7 +70,7 @@ internal static class OpenApiInfrastructure
 
                                 string endpoint = OpenApiTypeHelper.GetEndpoint(controller, routeAttr.Template, method, httpMethod.Template);
 
-                                Path path = OpenApiTypeHelper.GetPath(controller, routeAttr.Template, method);
+                                Path path = OpenApiTypeHelper.GetPath(controller, routeAttr.Template, method, httpMethod.Template);
 
                                 string m = httpMethod.HttpMethods.First().ToLower();
                                 if (res.Paths.TryGetValue(endpoint, out Dictionary<string, Path>? value)) value.Add(m, path);
@@ -71,6 +87,8 @@ internal static class OpenApiInfrastructure
                 }
             }
 
+            res.Components = OpenApiTypeHelper.Components;
+            if (filePath != null) await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(res, new JsonSerializerOptions { WriteIndented = true }));
             await context.Response.WriteAsJsonAsync(res, context.RequestAborted);
         });
     }

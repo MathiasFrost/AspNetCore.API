@@ -1,4 +1,6 @@
-﻿@using AspNetCore.API.Models
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@using AspNetCore.API.Models
 @model IEnumerable<AspNetCore.API.Models.World>
 
 @{
@@ -35,7 +37,7 @@
 
 <!-- Form to generate new worlds -->
 <h2>Generate new Worlds</h2>
-<form method="post" action="/Home/Generate" style="display: flex; gap: 1rem;">
+<form method="post" asp-action="Generate" style="display: flex; gap: 1rem;">
     <!-- adjust the action URL as needed -->
     <label>
         Worlds to generate

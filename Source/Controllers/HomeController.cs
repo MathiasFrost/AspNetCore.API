@@ -12,7 +12,10 @@ public sealed class HomeController : Controller
     public HomeController(IMediator mediator) => _mediator = mediator;
 
     [HttpPut("[action]/{str:datetime}")]
-    public (string, int) Test([FromQuery] string test, [FromRoute] DateTime str, [FromForm] MyClass a) => ("haha" + str, (int)a.Class.Test2);
+    public (string Str, int Num) Test([FromQuery] string test, [FromRoute] DateTime str, [FromForm] MyClass a) => ("haha" + str, (int)a.Class.Test2);
+    
+    [HttpPut("[action]")]
+    public string Test2([FromBody] string test) => ("haha" + test);
 
     public sealed class MyClass
     {

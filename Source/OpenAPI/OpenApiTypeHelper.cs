@@ -225,16 +225,16 @@ internal static class OpenApiTypeHelper
         {
             foreach ((string Name, Type Type) t in ts)
             {
-                SchemaDefinition? definition = GetSchemaDefinition(t.Type);
-                if (definition?.Type == "object")
+                if (Type.GetTypeCode(t.Type) == TypeCode.Object)
                 {
                     GetProperties(prefix == String.Empty, $"{t.Name}.", t.Type.GetProperties().Select(static prop => (prop.Name, prop.PropertyType)));
                 }
-                else if (definition != null)
+                else
                 {
+                    SchemaDefinition? definition = GetSchemaDefinition(t.Type);
                     string name = first ? t.Name : $"{prefix}{t.Name}";
                     encoding.Add(name, new Encoding { Style = "form" });
-                    properties.Add(name, new Property { Format = definition.Format, Type = definition.Type, Nullable = IsNullable(t.Type) });
+                    properties.Add(name, new Property { Format = definition?.Format, Type = definition?.Type, Nullable = IsNullable(t.Type) });
                 }
             }
         }

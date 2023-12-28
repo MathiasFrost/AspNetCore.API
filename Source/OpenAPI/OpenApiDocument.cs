@@ -54,7 +54,7 @@ public sealed class Parameter
     [JsonPropertyName("style"), UsedImplicitly]
     public required string Style { get; init; }
 
-    [JsonPropertyName("nullable"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault), UsedImplicitly]
+    [JsonPropertyName("required"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault), UsedImplicitly]
     public required bool Required { get; init; }
 
     [JsonPropertyName("schema"), UsedImplicitly]

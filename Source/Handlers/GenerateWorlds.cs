@@ -1,5 +1,6 @@
 ﻿using AspNetCore.API.Database;
 using AspNetCore.API.Models;
+using JetBrains.Annotations;
 using MediatR;
 
 namespace AspNetCore.API.Handlers;
@@ -9,6 +10,7 @@ public sealed class GenerateWorldsRequest : INotification
     internal int WorldsToGenerate { get; init; }
 }
 
+[UsedImplicitly]
 public sealed class GenerateWorldsHandler : INotificationHandler<GenerateWorldsRequest>
 {
     private readonly AspNetCoreDb _aspNetCoreDb;

@@ -1,12 +1,14 @@
 ﻿using System.Runtime.CompilerServices;
 using AspNetCore.API.Database;
 using AspNetCore.API.Models;
+using JetBrains.Annotations;
 using MediatR;
 
 namespace AspNetCore.API.Handlers;
 
 public sealed class GetWorldsRequest : IRequest<IEnumerable<World>>, IStreamRequest<World> { }
 
+[UsedImplicitly]
 public sealed class GetWorldsHandler : IRequestHandler<GetWorldsRequest, IEnumerable<World>>
 {
     private readonly AspNetCoreDb _aspNetCoreDb;
@@ -23,6 +25,7 @@ public sealed class GetWorldsHandler : IRequestHandler<GetWorldsRequest, IEnumer
             .Query<World>(cancellationToken);
 }
 
+[UsedImplicitly]
 public sealed class GetWorldsStreamHandler : IStreamRequestHandler<GetWorldsRequest, World>
 {
     private readonly AspNetCoreDb _aspNetCoreDb;

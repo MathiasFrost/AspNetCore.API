@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Runtime.CompilerServices;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AspNetCore.API.Controllers;
 
@@ -6,7 +7,7 @@ namespace AspNetCore.API.Controllers;
 public sealed class TestController : ControllerBase
 {
     [HttpGet]
-    public async Task Get(CancellationToken token)
+    public async IAsyncEnumerable<string> Get([EnumeratorCancellation] CancellationToken token)
     {
         Response.ContentType = "text/event-stream";
         for (var i = 0; !token.IsCancellationRequested; i++) // Infinite loop to keep the stream open
@@ -14,8 +15,8 @@ public sealed class TestController : ControllerBase
             await Task.Delay(1000, token); // Simulate some delay
 
             // Construct and send an SSE message
-            await Response.WriteAsync($"data: Event {i}\n\n", token);
-            await Response.Body.FlushAsync(token); // Important to flush the response stream
+            if (token.IsCancellationRequested) break;
+            yield return $"data: Event {i}\n\n";
         }
     }
 }

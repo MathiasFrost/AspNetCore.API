@@ -7,35 +7,7 @@ namespace AspNetCore.API.OpenAPI;
 
 internal static class OpenApiTypeHelper
 {
-    private sealed record class SchemaDefinition(
-        string? Type,
-        string? Format = null,
-        string? Ref = null,
-        SchemaDefinition? Items = null,
-        SchemaDefinition? AdditionalProperties = null,
-        bool IsDynamic = false)
-    {
-        public JsonNode? GetAdditionalProperties()
-        {
-            if (AdditionalProperties == null) return null;
-            if (IsDynamic) return true;
-            string format = Format == null ? String.Empty : $", \"format\": \"{Format}\"";
-            return JsonNode.Parse($"{{\"type\": \"{AdditionalProperties.Type}\"{format}}}");
-        }
-
-        public Schema? GetItemsSchema()
-        {
-            if (Items == null) return null;
-            return new Schema {
-                Type = Items.Type,
-                Format = Items.Format,
-                Ref = Items.Ref,
-                Properties = null,
-                AdditionalProperties = Items.GetAdditionalProperties(),
-                Items = Items.GetItemsSchema()
-            };
-        }
-    }
+    public static Components Components { get; } = new() { Schemas = new Dictionary<string, Schema>() };
 
     private static SchemaDefinition? GetSchemaDefinition(Type type)
     {
@@ -87,8 +59,6 @@ internal static class OpenApiTypeHelper
                 return new SchemaDefinition("string");
         }
     }
-
-    public static Components Components { get; } = new() { Schemas = new Dictionary<string, Schema>() };
 
     private static string GetOrCreateSchema(Type type)
     {
@@ -215,7 +185,7 @@ internal static class OpenApiTypeHelper
             else if (!typeof(IActionResult).IsAssignableFrom(unwrapped)) // Action results are special. If we missed one we have to ignore
             {
                 definition = GetSchemaDefinition(unwrapped);
-                if (definition != null) contentType = definition.Type == "object" ? "application/json" : "text/plain";
+                if (definition != null) contentType = definition.Type is "object" or "array" ? "application/json" : "text/plain";
             }
         }
 
@@ -500,5 +470,35 @@ internal static class OpenApiTypeHelper
 
         generic = type.GenericTypeArguments[0];
         return type.IsGenericType && typeof(IAsyncEnumerable<>).IsAssignableFrom(type.GetGenericTypeDefinition());
+    }
+
+    private sealed record class SchemaDefinition(
+        string? Type,
+        string? Format = null,
+        string? Ref = null,
+        SchemaDefinition? Items = null,
+        SchemaDefinition? AdditionalProperties = null,
+        bool IsDynamic = false)
+    {
+        public JsonNode? GetAdditionalProperties()
+        {
+            if (AdditionalProperties == null) return null;
+            if (IsDynamic) return true;
+            string format = Format == null ? String.Empty : $", \"format\": \"{Format}\"";
+            return JsonNode.Parse($"{{\"type\": \"{AdditionalProperties.Type}\"{format}}}");
+        }
+
+        public Schema? GetItemsSchema()
+        {
+            if (Items == null) return null;
+            return new Schema {
+                Type = Items.Type,
+                Format = Items.Format,
+                Ref = Items.Ref,
+                Properties = null,
+                AdditionalProperties = Items.GetAdditionalProperties(),
+                Items = Items.GetItemsSchema()
+            };
+        }
     }
 }

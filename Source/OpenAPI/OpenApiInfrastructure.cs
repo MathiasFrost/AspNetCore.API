@@ -7,6 +7,8 @@ namespace AspNetCore.API.OpenAPI;
 
 internal static class OpenApiInfrastructure
 {
+    private static bool _hasCompiled;
+
     public static IApplicationBuilder UseOpenApi(this IApplicationBuilder app)
     {
         return app.Use(static async (context, next) =>
@@ -23,8 +25,9 @@ internal static class OpenApiInfrastructure
             {
                 var name = $"{executing}.OpenAPI.json";
                 filePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, name);
-                if (File.Exists(filePath))
+                if (!_hasCompiled && File.Exists(filePath))
                 {
+                    _hasCompiled = true;
                     string content = await File.ReadAllTextAsync(filePath);
                     context.Response.ContentType = "application/json; charset=utf-8";
                     await context.Response.WriteAsync(content, context.RequestAborted);
